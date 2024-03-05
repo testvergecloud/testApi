@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/productgrp"
-	v1 "github.com/ardanlabs/service/business/web/v1"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/productgrp"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
+
 	"github.com/google/go-cmp/cmp"
 )
 

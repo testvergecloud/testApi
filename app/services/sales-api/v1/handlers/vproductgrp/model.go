@@ -3,7 +3,7 @@ package vproductgrp
 import (
 	"time"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
 )
 
 // AppProduct represents information about an individual product with

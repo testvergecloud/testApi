@@ -3,8 +3,8 @@ package {{.DomainL}}grp
 import (
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/{{.DomainL}}"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}"
+	"github.com/testvergecloud/testApi/foundation/validate"
 	"github.com/google/uuid"
 )
 

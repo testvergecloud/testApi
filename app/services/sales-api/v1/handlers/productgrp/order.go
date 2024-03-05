@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/web/v1/order"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/foundation/validate"
 )
 
 func parseOrder(r *http.Request) (order.By, error) {
@@ -18,7 +18,7 @@ func parseOrder(r *http.Request) (order.By, error) {
 		orderByQuantity  = "quantity"
 	)
 
-	var orderByFields = map[string]string{
+	orderByFields := map[string]string{
 		orderByProductID: product.OrderByProductID,
 		orderByName:      product.OrderByName,
 		orderByCost:      product.OrderByCost,

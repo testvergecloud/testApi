@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/web/v1/metrics"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/web/v1/metrics"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Metrics updates program counters.

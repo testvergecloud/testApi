@@ -3,7 +3,8 @@ package vproductdb
 import (
 	"time"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
+
 	"github.com/google/uuid"
 )
 

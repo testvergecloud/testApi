@@ -8,8 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/foundation/docker"
+	"github.com/testvergecloud/testApi/business/data/dbtest"
+	"github.com/testvergecloud/testApi/foundation/docker"
+
 	"github.com/go-json-experiment/json"
 )
 

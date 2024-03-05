@@ -5,10 +5,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	v1 "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 type handlers struct {

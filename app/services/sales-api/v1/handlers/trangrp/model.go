@@ -5,9 +5,9 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/foundation/validate"
 )
 
 // AppProduct represents an individual product.

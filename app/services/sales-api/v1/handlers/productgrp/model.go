@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/foundation/validate"
 )
 
 // AppProduct represents information about an individual product.

@@ -3,7 +3,8 @@ package productdb
 import (
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+
 	"github.com/google/uuid"
 )
 

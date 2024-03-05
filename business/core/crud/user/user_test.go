@@ -10,9 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/foundation/docker"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/data/dbtest"
+	"github.com/testvergecloud/testApi/foundation/docker"
+
 	"github.com/google/go-cmp/cmp"
 )
 

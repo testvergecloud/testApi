@@ -14,7 +14,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ardanlabs/service/app/tooling/docs/webapi"
+	"github.com/testvergecloud/testApi/app/tooling/docs/webapi"
 )
 
 //go:embed template.html
@@ -86,7 +86,7 @@ type page struct {
 }
 
 func (p *page) show(w http.ResponseWriter, r *http.Request) {
-	var funcMap = template.FuncMap{
+	funcMap := template.FuncMap{
 		"minus":  minus,
 		"status": status,
 		"json":   toJSON,

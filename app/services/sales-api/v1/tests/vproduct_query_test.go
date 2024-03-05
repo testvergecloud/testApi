@@ -3,8 +3,8 @@ package tests
 import (
 	"net/http"
 
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/vproductgrp"
-	v1 "github.com/ardanlabs/service/business/web/v1"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/vproductgrp"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
 )
 
 func vproductQuery200(sd seedData) []tableData {

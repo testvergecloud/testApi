@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ardanlabs/service/foundation/logger"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/foundation/logger"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Logger writes information about the request to the logs.

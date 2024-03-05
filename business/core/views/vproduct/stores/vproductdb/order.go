@@ -3,8 +3,8 @@ package vproductdb
 import (
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
-	"github.com/ardanlabs/service/business/web/v1/order"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
 )
 
 var orderByFields = map[string]string{

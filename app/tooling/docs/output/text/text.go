@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/ardanlabs/service/app/tooling/docs/webapi"
+	"github.com/testvergecloud/testApi/app/tooling/docs/webapi"
+
 	"github.com/go-json-experiment/json"
 )
 
@@ -15,7 +16,7 @@ import (
 var document string
 
 func Transform(records []webapi.Record) error {
-	var funcMap = template.FuncMap{
+	funcMap := template.FuncMap{
 		"minus":  minus,
 		"status": status,
 		"json":   toJSON,

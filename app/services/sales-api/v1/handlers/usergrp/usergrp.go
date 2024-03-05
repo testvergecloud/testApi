@@ -9,13 +9,14 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	v1 "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/business/web/v1/auth"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/business/web/v1/page"
-	"github.com/ardanlabs/service/foundation/validate"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/v1/page"
+	"github.com/testvergecloud/testApi/foundation/validate"
+	"github.com/testvergecloud/testApi/foundation/web"
+
 	"github.com/golang-jwt/jwt/v4"
 )
 

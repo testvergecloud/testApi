@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/{{.DomainL}}"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}"
+	"github.com/testvergecloud/testApi/foundation/validate"
 )
 
 // App{{.DomainU}} represents an individual {{.DomainL}}.

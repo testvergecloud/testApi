@@ -131,10 +131,10 @@ TEMPO           := grafana/tempo:2.3.0
 LOKI            := grafana/loki:2.9.0
 PROMTAIL        := grafana/promtail:2.9.0
 
-KIND_CLUSTER    := ardan-starter-cluster
+KIND_CLUSTER    := vergecloud-starter-cluster
 NAMESPACE       := sales-system
 APP             := sales
-BASE_IMAGE_NAME := ardanlabs/service
+BASE_IMAGE_NAME := vergecloud/service
 SERVICE_NAME    := sales-api
 VERSION         := 0.0.1
 SERVICE_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME):$(VERSION)
@@ -231,12 +231,12 @@ dev-load:
 # docker-image (possibly a tagging issue?) but the below works.
 dev-load-podman:
 	docker image save $(SERVICE_IMAGE):$(VERSION) -o image-sales
-	kind load image-archive image-sales --name ardan-starter-cluster
+	kind load image-archive image-sales --name $(KIND_CLUSTER) 
 	rm -f image-sales-metrics image-sales
 
 	rm -f image-sales-metrics image-sales
 	docker image save $(METRICS_IMAGE):$(VERSION) -o image-sales-metrics
-	kind load image-archive image-sales-metrics --name ardan-starter-cluster
+	kind load image-archive image-sales-metrics --name $(KIND_CLUSTER) 
 
 dev-apply:
 	kustomize build zarf/k8s/dev/grafana | kubectl apply -f -

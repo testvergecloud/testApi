@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/ardanlabs/service/business/web/v1/metrics"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/web/v1/metrics"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Panics recovers from panics and converts the panic to an error so it is
@@ -15,7 +15,6 @@ import (
 func Panics() web.MidHandler {
 	m := func(handler web.Handler) web.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) (err error) {
-
 			// Defer a function to recover from a panic and set the err return
 			// variable after the fact.
 			defer func() {

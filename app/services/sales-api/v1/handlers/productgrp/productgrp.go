@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	v1 "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/business/web/v1/page"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/v1/page"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Set of error variables for handling product group errors.

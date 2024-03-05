@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ardanlabs/service/app/tooling/docs/output/html"
-	"github.com/ardanlabs/service/app/tooling/docs/output/json"
-	"github.com/ardanlabs/service/app/tooling/docs/output/text"
-	"github.com/ardanlabs/service/app/tooling/docs/webapi"
+	"github.com/testvergecloud/testApi/app/tooling/docs/output/html"
+	"github.com/testvergecloud/testApi/app/tooling/docs/output/json"
+	"github.com/testvergecloud/testApi/app/tooling/docs/output/text"
+	"github.com/testvergecloud/testApi/app/tooling/docs/webapi"
 )
 
-var output = flag.String("out", "html", "json, text, html")
-var browser = flag.Bool("browser", false, "start the browser automagically")
+var (
+	output  = flag.String("out", "html", "json, text, html")
+	browser = flag.Bool("browser", false, "start the browser automagically")
+)
 
 func main() {
 	flag.Parse()

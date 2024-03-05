@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/foundation/validate"
+
 	"github.com/google/uuid"
 )
 

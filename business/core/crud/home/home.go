@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/delegate"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/data/transaction"
-	"github.com/ardanlabs/service/business/web/v1/order"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/testvergecloud/testApi/business/core/crud/delegate"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/data/transaction"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/google/uuid"
 )
 

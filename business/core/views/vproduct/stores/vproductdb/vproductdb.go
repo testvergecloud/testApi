@@ -6,10 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/business/web/v1/order"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/jmoiron/sqlx"
 )
 

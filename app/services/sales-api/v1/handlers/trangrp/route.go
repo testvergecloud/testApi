@@ -3,17 +3,18 @@ package trangrp
 import (
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/crud/delegate"
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/product/stores/productdb"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/core/crud/user/stores/usercache"
-	"github.com/ardanlabs/service/business/core/crud/user/stores/userdb"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/business/web/v1/auth"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/foundation/logger"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/crud/delegate"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/product/stores/productdb"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/core/crud/user/stores/usercache"
+	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/foundation/logger"
+	"github.com/testvergecloud/testApi/foundation/web"
+
 	"github.com/jmoiron/sqlx"
 )
 

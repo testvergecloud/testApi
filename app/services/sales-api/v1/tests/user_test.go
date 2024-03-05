@@ -5,9 +5,9 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/ardanlabs/service/app/services/sales-api/v1/build/all"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/business/web/v1/mux"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/build/all"
+	"github.com/testvergecloud/testApi/business/data/dbtest"
+	"github.com/testvergecloud/testApi/business/web/v1/mux"
 )
 
 func Test_User(t *testing.T) {
