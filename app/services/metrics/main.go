@@ -13,12 +13,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/testvergecloud/testApi/app/services/metrics/collector"
+	"github.com/testvergecloud/testApi/app/services/metrics/publisher"
+	expvarsrv "github.com/testvergecloud/testApi/app/services/metrics/publisher/expvar"
+	prometheussrv "github.com/testvergecloud/testApi/app/services/metrics/publisher/prometheus"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/services/metrics/collector"
-	"github.com/ardanlabs/service/app/services/metrics/publisher"
-	expvarsrv "github.com/ardanlabs/service/app/services/metrics/publisher/expvar"
-	prometheussrv "github.com/ardanlabs/service/app/services/metrics/publisher/prometheus"
-	"github.com/ardanlabs/service/foundation/logger"
 )
 
 var build = "develop"
@@ -47,7 +48,6 @@ func main() {
 }
 
 func run(ctx context.Context, log *logger.Logger) error {
-
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
 

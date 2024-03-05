@@ -6,10 +6,10 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/core/crud/user/stores/userdb"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/logger"
 )
 
 // UserAdd adds new users into the database.

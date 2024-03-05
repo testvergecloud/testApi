@@ -1,4 +1,4 @@
-module github.com/ardanlabs/service
+module github.com/testvergecloud/testApi
 
 go 1.22
 

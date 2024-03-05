@@ -3,13 +3,13 @@ package tests
 import (
 	"time"
 
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/homegrp"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/productgrp"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/usergrp"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/vproductgrp"
-	"github.com/ardanlabs/service/business/core/crud/home"
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/user"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/homegrp"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/productgrp"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/usergrp"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/vproductgrp"
+	"github.com/testvergecloud/testApi/business/core/crud/home"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
 )
 
 type tableData struct {

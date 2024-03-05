@@ -3,7 +3,8 @@ package product
 import (
 	"fmt"
 
-	"github.com/ardanlabs/service/foundation/validate"
+	"github.com/testvergecloud/testApi/foundation/validate"
+
 	"github.com/google/uuid"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
 )
 
 func (s *Store) applyFilter(filter product.QueryFilter, data map[string]interface{}, buf *bytes.Buffer) {

@@ -3,8 +3,8 @@ package homedb
 import (
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/crud/home"
-	"github.com/ardanlabs/service/business/web/v1/order"
+	"github.com/testvergecloud/testApi/business/core/crud/home"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
 )
 
 var orderByFields = map[string]string{

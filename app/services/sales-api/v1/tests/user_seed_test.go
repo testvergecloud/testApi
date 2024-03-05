@@ -3,8 +3,8 @@ package tests
 import (
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/data/dbtest"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/data/dbtest"
 )
 
 func createUserSeed(dbTest *dbtest.Test) (seedData, error) {

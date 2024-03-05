@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/ardanlabs/service/business/core/{{.DomainL}}"
+	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}"
 )
 
 func (s *Store) applyFilter(filter {{.DomainL}}.QueryFilter, data map[string]interface{}, buf *bytes.Buffer) {

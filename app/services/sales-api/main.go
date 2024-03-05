@@ -12,18 +12,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/build/all"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/build/crud"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/build/reporting"
+	"github.com/testvergecloud/testApi/business/core/crud/delegate"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/v1/debug"
+	"github.com/testvergecloud/testApi/business/web/v1/mux"
+	"github.com/testvergecloud/testApi/foundation/keystore"
+	"github.com/testvergecloud/testApi/foundation/logger"
+	"github.com/testvergecloud/testApi/foundation/web"
+
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/build/all"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/build/crud"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/build/reporting"
-	"github.com/ardanlabs/service/business/core/crud/delegate"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/business/web/v1/auth"
-	"github.com/ardanlabs/service/business/web/v1/debug"
-	"github.com/ardanlabs/service/business/web/v1/mux"
-	"github.com/ardanlabs/service/foundation/keystore"
-	"github.com/ardanlabs/service/foundation/logger"
-	"github.com/ardanlabs/service/foundation/web"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -37,8 +38,10 @@ import (
 	Need to figure out timeouts for http service.
 */
 
-var build = "develop"
-var routes = "all" // go build -ldflags "-X main.routes=crud"
+var (
+	build  = "develop"
+	routes = "all" // go build -ldflags "-X main.routes=crud"
+)
 
 func main() {
 	var log *logger.Logger
@@ -66,7 +69,6 @@ func main() {
 }
 
 func run(ctx context.Context, log *logger.Logger) error {
-
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
 
@@ -272,7 +274,6 @@ func run(ctx context.Context, log *logger.Logger) error {
 }
 
 func buildRoutes() mux.RouteAdder {
-
 	// The idea here is that we can build different versions of the binary
 	// with different sets of exposed web APIs. By default we build a single
 	// an instance with all the web APIs.
@@ -297,7 +298,6 @@ func buildRoutes() mux.RouteAdder {
 
 // startTracing configure open telemetry to be used with Grafana Tempo.
 func startTracing(serviceName string, reporterURI string, probability float64) (*trace.TracerProvider, error) {
-
 	// WARNING: The current settings are using defaults which may not be
 	// compatible with your project. Please review the documentation for
 	// opentelemetry.

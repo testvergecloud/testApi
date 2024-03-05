@@ -3,10 +3,10 @@ package tests
 import (
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/crud/home"
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/data/dbtest"
+	"github.com/testvergecloud/testApi/business/core/crud/home"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/data/dbtest"
 )
 
 func createHomeSeed(dbTest *dbtest.Test) (seedData, error) {

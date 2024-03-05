@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/service/business/data/migrate"
-	"github.com/ardanlabs/service/business/data/sqldb"
+	"github.com/testvergecloud/testApi/business/data/migrate"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
 )
 
 // Seed loads test data into the database.

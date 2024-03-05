@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ardanlabs/service/business/core/crud/product"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/business/data/transaction"
-	"github.com/ardanlabs/service/business/web/v1/order"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/testvergecloud/testApi/business/core/crud/product"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/business/data/transaction"
+	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )

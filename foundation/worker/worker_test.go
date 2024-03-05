@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/service/foundation/worker"
+	"github.com/testvergecloud/testApi/foundation/worker"
 )
 
 func Test_Worker(t *testing.T) {
-
 	// Define a work function that waits to be canceled.
 	work := func(ctx context.Context) {
 		t.Logf("Goroutine running")

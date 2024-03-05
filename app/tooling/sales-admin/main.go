@@ -8,10 +8,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/testvergecloud/testApi/app/tooling/sales-admin/commands"
+	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/tooling/sales-admin/commands"
-	"github.com/ardanlabs/service/business/data/sqldb"
-	"github.com/ardanlabs/service/foundation/logger"
 	"github.com/google/uuid"
 )
 

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/crud/home"
-	v1 "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/business/web/v1/page"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/crud/home"
+	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/v1/page"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Set of error variables for handling home group errors.

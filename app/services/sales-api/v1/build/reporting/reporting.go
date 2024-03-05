@@ -2,10 +2,10 @@
 package reporting
 
 import (
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/checkgrp"
-	"github.com/ardanlabs/service/app/services/sales-api/v1/handlers/vproductgrp"
-	"github.com/ardanlabs/service/business/web/v1/mux"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/checkgrp"
+	"github.com/testvergecloud/testApi/app/services/sales-api/v1/handlers/vproductgrp"
+	"github.com/testvergecloud/testApi/business/web/v1/mux"
+	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Routes constructs the add value which provides the implementation of

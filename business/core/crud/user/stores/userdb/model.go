@@ -6,8 +6,9 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/data/sqldb/dbarray"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/data/sqldb/dbarray"
+
 	"github.com/google/uuid"
 )
 

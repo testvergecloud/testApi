@@ -3,12 +3,13 @@ package vproductgrp
 import (
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/views/vproduct"
-	"github.com/ardanlabs/service/business/core/views/vproduct/stores/vproductdb"
-	"github.com/ardanlabs/service/business/web/v1/auth"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/foundation/logger"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct"
+	"github.com/testvergecloud/testApi/business/core/views/vproduct/stores/vproductdb"
+	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/foundation/logger"
+	"github.com/testvergecloud/testApi/foundation/web"
+
 	"github.com/jmoiron/sqlx"
 )
 

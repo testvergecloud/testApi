@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ardanlabs/service/business/core/crud/user"
-	"github.com/ardanlabs/service/business/core/crud/user/stores/userdb"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
+	"github.com/testvergecloud/testApi/foundation/logger"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -65,7 +66,6 @@ type Auth struct {
 
 // New creates an Auth to support authentication/authorization.
 func New(cfg Config) (*Auth, error) {
-
 	// If a database connection is not provided, we won't perform the
 	// user enabled check.
 	var usrCore *user.Core

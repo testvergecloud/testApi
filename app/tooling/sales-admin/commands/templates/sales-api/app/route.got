@@ -3,13 +3,13 @@ package {{.DomainL}}grp
 import (
 	"net/http"
 
-	"github.com/ardanlabs/service/business/core/event"
-	"github.com/ardanlabs/service/business/core/{{.DomainL}}"
-	"github.com/ardanlabs/service/business/core/{{.DomainL}}/stores/{{.DomainL}}db"
-	"github.com/ardanlabs/service/business/web/v1/auth"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/foundation/logger"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/testvergecloud/testApi/business/core/event"
+	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}"
+	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}/stores/{{.DomainL}}db"
+	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/foundation/logger"
+	"github.com/testvergecloud/testApi/foundation/web"
 	"github.com/jmoiron/sqlx"
 )
 
