@@ -9,10 +9,10 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/crud/product"
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
-	"github.com/testvergecloud/testApi/business/web/v1/page"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/mid"
+	"github.com/testvergecloud/testApi/business/web/page"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Set of error variables for handling product group errors.
@@ -35,8 +35,8 @@ func new(product *product.Core, user *user.Core) *handlers {
 // create adds a new product to the system.
 func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppNewProduct
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	prd, err := h.product.Create(ctx, toCoreNewProduct(ctx, app))
@@ -44,14 +44,14 @@ func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("create: app[%+v]: %w", app, err)
 	}
 
-	return web.Respond(ctx, w, toAppProduct(prd), http.StatusCreated)
+	return wf.Respond(ctx, w, toAppProduct(prd), http.StatusCreated)
 }
 
 // update updates a product in the system.
 func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppUpdateProduct
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	prd := mid.GetProduct(ctx)
@@ -61,7 +61,7 @@ func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("update: productID[%s] app[%+v]: %w", prd.ID, app, err)
 	}
 
-	return web.Respond(ctx, w, toAppProduct(updPrd), http.StatusOK)
+	return wf.Respond(ctx, w, toAppProduct(updPrd), http.StatusOK)
 }
 
 // delete removes a product from the system.
@@ -72,7 +72,7 @@ func (h *handlers) delete(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("delete: productID[%s]: %w", prd.ID, err)
 	}
 
-	return web.Respond(ctx, w, nil, http.StatusNoContent)
+	return wf.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // query returns a list of products with paging.
@@ -102,10 +102,10 @@ func (h *handlers) query(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("count: %w", err)
 	}
 
-	return web.Respond(ctx, w, v1.NewPageDocument(toAppProducts(prds), total, page.Number, page.RowsPerPage), http.StatusOK)
+	return wf.Respond(ctx, w, wb.NewPageDocument(toAppProducts(prds), total, page.Number, page.RowsPerPage), http.StatusOK)
 }
 
 // queryByID returns a product by its ID.
 func (h *handlers) queryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return web.Respond(ctx, w, toAppProduct(mid.GetProduct(ctx)), http.StatusOK)
+	return wf.Respond(ctx, w, toAppProduct(mid.GetProduct(ctx)), http.StatusOK)
 }

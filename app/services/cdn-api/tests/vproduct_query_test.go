@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/vproductgrp"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web"
 )
 
 func vproductQuery200(sd seedData) []tableData {
@@ -20,16 +20,16 @@ func vproductQuery200(sd seedData) []tableData {
 			token:      sd.admins[1].token,
 			statusCode: http.StatusOK,
 			method:     http.MethodGet,
-			resp:       &v1.PageDocument[vproductgrp.AppProduct]{},
-			expResp: &v1.PageDocument[vproductgrp.AppProduct]{
+			resp:       &web.PageDocument[vproductgrp.AppProduct]{},
+			expResp: &web.PageDocument[vproductgrp.AppProduct]{
 				Page:        1,
 				RowsPerPage: 10,
 				Total:       total,
 				Items:       allProducts,
 			},
 			cmpFunc: func(x interface{}, y interface{}) string {
-				resp := x.(*v1.PageDocument[vproductgrp.AppProduct])
-				exp := y.(*v1.PageDocument[vproductgrp.AppProduct])
+				resp := x.(*web.PageDocument[vproductgrp.AppProduct])
+				exp := y.(*web.PageDocument[vproductgrp.AppProduct])
 
 				var found int
 				for _, r := range resp.Items {

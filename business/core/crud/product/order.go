@@ -1,6 +1,6 @@
 package product
 
-import "github.com/testvergecloud/testApi/business/web/v1/order"
+import "github.com/testvergecloud/testApi/business/web/order"
 
 // DefaultOrderBy represents the default way we sort.
 var DefaultOrderBy = order.NewBy(OrderByProductID, order.ASC)

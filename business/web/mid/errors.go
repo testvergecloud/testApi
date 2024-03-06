@@ -4,36 +4,36 @@ import (
 	"context"
 	"net/http"
 
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/validate"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Errors handles errors coming out of the call chain. It detects normal
 // application errors which are used to respond to the client in a uniform way.
 // Unexpected errors (status >= 500) are logged.
-func Errors(log *logger.Logger) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func Errors(log *logger.Logger) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			if err := handler(ctx, w, r); err != nil {
 				log.Error(ctx, "message", "msg", err)
 
-				ctx, span := web.AddSpan(ctx, "business.web.request.mid.error")
+				ctx, span := wf.AddSpan(ctx, "business.web.request.mid.error")
 				span.RecordError(err)
 				span.End()
 
-				var er v1.ErrorResponse
+				var er wb.ErrorResponse
 				var status int
 
 				switch {
-				case v1.IsTrustedError(err):
-					trsErr := v1.GetTrustedError(err)
+				case wb.IsTrustedError(err):
+					trsErr := wb.GetTrustedError(err)
 
 					if validate.IsFieldErrors(trsErr.Err) {
 						fieldErrors := validate.GetFieldErrors(trsErr.Err)
-						er = v1.ErrorResponse{
+						er = wb.ErrorResponse{
 							Error:  "data validation error",
 							Fields: fieldErrors.Fields(),
 						}
@@ -41,31 +41,31 @@ func Errors(log *logger.Logger) web.MidHandler {
 						break
 					}
 
-					er = v1.ErrorResponse{
+					er = wb.ErrorResponse{
 						Error: trsErr.Error(),
 					}
 					status = trsErr.Status
 
 				case auth.IsAuthError(err):
-					er = v1.ErrorResponse{
+					er = wb.ErrorResponse{
 						Error: http.StatusText(http.StatusUnauthorized),
 					}
 					status = http.StatusUnauthorized
 
 				default:
-					er = v1.ErrorResponse{
+					er = wb.ErrorResponse{
 						Error: http.StatusText(http.StatusInternalServerError),
 					}
 					status = http.StatusInternalServerError
 				}
 
-				if err := web.Respond(ctx, w, er, status); err != nil {
+				if err := wf.Respond(ctx, w, er, status); err != nil {
 					return err
 				}
 
 				// If we receive the shutdown err we need to return it
 				// back to the base handler to shut down the service.
-				if web.IsShutdown(err) {
+				if wf.IsShutdown(err) {
 					return err
 				}
 			}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/usergrp"
 	"github.com/testvergecloud/testApi/business/data/dbtest"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -76,8 +76,8 @@ func userUpdate400(sd seedData) []tableData {
 				Email:           dbtest.StringPointer("bill@"),
 				PasswordConfirm: dbtest.StringPointer("jack"),
 			},
-			resp: &v1.ErrorResponse{},
-			expResp: &v1.ErrorResponse{
+			resp: &web.ErrorResponse{},
+			expResp: &web.ErrorResponse{
 				Error:  "data validation error",
 				Fields: map[string]string{"email": "email must be a valid email address", "passwordConfirm": "passwordConfirm must be equal to Password"},
 			},
@@ -94,8 +94,8 @@ func userUpdate400(sd seedData) []tableData {
 			model: &usergrp.AppUpdateUser{
 				Roles: []string{"BAD ROLE"},
 			},
-			resp: &v1.ErrorResponse{},
-			expResp: &v1.ErrorResponse{
+			resp: &web.ErrorResponse{},
+			expResp: &web.ErrorResponse{
 				Error: "parse: invalid role \"BAD ROLE\"",
 			},
 			cmpFunc: func(x interface{}, y interface{}) string {
@@ -115,8 +115,8 @@ func userUpdate401(sd seedData) []tableData {
 			token:      "",
 			method:     http.MethodPut,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -127,8 +127,8 @@ func userUpdate401(sd seedData) []tableData {
 			token:      sd.users[0].token + "A",
 			method:     http.MethodPut,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -147,8 +147,8 @@ func userUpdate401(sd seedData) []tableData {
 				Password:        dbtest.StringPointer("123"),
 				PasswordConfirm: dbtest.StringPointer("123"),
 			},
-			resp:    &v1.ErrorResponse{},
-			expResp: &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:    &web.ErrorResponse{},
+			expResp: &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},

@@ -7,7 +7,7 @@ import (
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/build/all"
 	"github.com/testvergecloud/testApi/business/data/dbtest"
-	"github.com/testvergecloud/testApi/business/web/v1/mux"
+	"github.com/testvergecloud/testApi/business/web/mux"
 )
 
 func Test_VProduct(t *testing.T) {

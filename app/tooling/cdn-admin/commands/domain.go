@@ -102,7 +102,7 @@ func addStorageLayer(domain string) error {
 }
 
 func addMiddlewareLayer(domain string) error {
-	basePath := "business/web/v1/mid"
+	basePath := "business/web/mid"
 
 	app, err := fs.Sub(templates, "templates/cdn-api/mid")
 	if err != nil {

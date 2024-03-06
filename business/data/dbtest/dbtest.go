@@ -21,7 +21,7 @@ import (
 	"github.com/testvergecloud/testApi/business/core/views/vproduct/stores/vproductdb"
 	"github.com/testvergecloud/testApi/business/data/migrate"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/auth"
 	"github.com/testvergecloud/testApi/foundation/docker"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"

@@ -4,7 +4,7 @@ package mid
 import (
 	"context"
 
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/auth"
 )
 
 type ctxKey int

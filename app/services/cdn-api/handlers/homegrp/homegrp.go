@@ -8,10 +8,10 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/crud/home"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
-	"github.com/testvergecloud/testApi/business/web/v1/page"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/mid"
+	"github.com/testvergecloud/testApi/business/web/page"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Set of error variables for handling home group errors.
@@ -32,13 +32,13 @@ func new(home *home.Core) *handlers {
 // create adds a new home to the system.
 func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppNewHome
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	nh, err := toCoreNewHome(ctx, app)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	hme, err := h.home.Create(ctx, nh)
@@ -46,19 +46,19 @@ func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("create: hme[%+v]: %w", app, err)
 	}
 
-	return web.Respond(ctx, w, toAppHome(hme), http.StatusCreated)
+	return wf.Respond(ctx, w, toAppHome(hme), http.StatusCreated)
 }
 
 // update updates a home in the system.
 func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppUpdateHome
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	uh, err := toCoreUpdateHome(app)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	hme := mid.GetHome(ctx)
@@ -68,7 +68,7 @@ func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("update: homeID[%s] app[%+v]: %w", hme.ID, app, err)
 	}
 
-	return web.Respond(ctx, w, toAppHome(updHme), http.StatusOK)
+	return wf.Respond(ctx, w, toAppHome(updHme), http.StatusOK)
 }
 
 // delete deletes a home from the system.
@@ -79,7 +79,7 @@ func (h *handlers) delete(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("delete: homeID[%s]: %w", hme.ID, err)
 	}
 
-	return web.Respond(ctx, w, nil, http.StatusNoContent)
+	return wf.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // query returns a list of homes with paging.
@@ -109,10 +109,10 @@ func (h *handlers) query(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("count: %w", err)
 	}
 
-	return web.Respond(ctx, w, v1.NewPageDocument(toAppHomes(homes), total, page.Number, page.RowsPerPage), http.StatusOK)
+	return wf.Respond(ctx, w, wb.NewPageDocument(toAppHomes(homes), total, page.Number, page.RowsPerPage), http.StatusOK)
 }
 
 // queryByID returns a home by its ID.
 func (h *handlers) queryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return web.Respond(ctx, w, toAppHome(mid.GetHome(ctx)), http.StatusOK)
+	return wf.Respond(ctx, w, toAppHome(mid.GetHome(ctx)), http.StatusOK)
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/productgrp"
 	"github.com/testvergecloud/testApi/business/data/dbtest"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -72,8 +72,8 @@ func productUpdate400(sd seedData) []tableData {
 				Cost:     dbtest.FloatPointer(-1.0),
 				Quantity: dbtest.IntPointer(0),
 			},
-			resp: &v1.ErrorResponse{},
-			expResp: &v1.ErrorResponse{
+			resp: &web.ErrorResponse{},
+			expResp: &web.ErrorResponse{
 				Error:  "data validation error",
 				Fields: map[string]string{"cost": "cost must be 0 or greater", "quantity": "quantity must be 1 or greater"},
 			},
@@ -94,8 +94,8 @@ func productUpdate401(sd seedData) []tableData {
 			token:      "",
 			method:     http.MethodPut,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -106,8 +106,8 @@ func productUpdate401(sd seedData) []tableData {
 			token:      sd.users[1].token + "A",
 			method:     http.MethodPut,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -123,8 +123,8 @@ func productUpdate401(sd seedData) []tableData {
 				Cost:     dbtest.FloatPointer(10.34),
 				Quantity: dbtest.IntPointer(10),
 			},
-			resp:    &v1.ErrorResponse{},
-			expResp: &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:    &web.ErrorResponse{},
+			expResp: &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},

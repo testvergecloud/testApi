@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/usergrp"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	v1 "github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"

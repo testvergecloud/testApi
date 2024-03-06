@@ -6,7 +6,7 @@ import (
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/homegrp"
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	wb "github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -30,16 +30,16 @@ func homeQuery200(sd seedData) []tableData {
 			token:      sd.admins[0].token,
 			statusCode: http.StatusOK,
 			method:     http.MethodGet,
-			resp:       &v1.PageDocument[homegrp.AppHome]{},
-			expResp: &v1.PageDocument[homegrp.AppHome]{
+			resp:       &wb.PageDocument[homegrp.AppHome]{},
+			expResp: &wb.PageDocument[homegrp.AppHome]{
 				Page:        1,
 				RowsPerPage: 10,
 				Total:       total,
 				Items:       toAppHomes(append(sd.admins[0].homes, sd.users[0].homes...)),
 			},
 			cmpFunc: func(x interface{}, y interface{}) string {
-				resp := x.(*v1.PageDocument[homegrp.AppHome])
-				exp := y.(*v1.PageDocument[homegrp.AppHome])
+				resp := x.(*wb.PageDocument[homegrp.AppHome])
+				exp := y.(*wb.PageDocument[homegrp.AppHome])
 
 				var found int
 				for _, r := range resp.Items {
