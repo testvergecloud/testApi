@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/crud/home"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -35,23 +35,23 @@ func setHome(ctx context.Context, hme home.Home) context.Context {
 // home from the DB if a home id is specified in the call. Depending on
 // the rule specified, the userid from the claims may be compared with the
 // specified user id from the home.
-func AuthorizeHome(a *auth.Auth, rule string, hmeCore *home.Core) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func AuthorizeHome(a *auth.Auth, rule string, hmeCore *home.Core) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			var userID uuid.UUID
 
-			if id := web.Param(r, "home_id"); id != "" {
+			if id := wf.Param(r, "home_id"); id != "" {
 				var err error
 				homeID, err := uuid.Parse(id)
 				if err != nil {
-					return v1.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
+					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
 				}
 
 				hme, err := hmeCore.QueryByID(ctx, homeID)
 				if err != nil {
 					switch {
 					case errors.Is(err, home.ErrNotFound):
-						return v1.NewTrustedError(err, http.StatusNoContent)
+						return wb.NewTrustedError(err, http.StatusNoContent)
 					default:
 						return fmt.Errorf("querybyid: homeID[%s]: %w", homeID, err)
 					}

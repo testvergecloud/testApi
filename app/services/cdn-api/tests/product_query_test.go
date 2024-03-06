@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/productgrp"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -20,16 +20,16 @@ func productQuery200(sd seedData) []tableData {
 			token:      sd.admins[1].token,
 			statusCode: http.StatusOK,
 			method:     http.MethodGet,
-			resp:       &v1.PageDocument[productgrp.AppProduct]{},
-			expResp: &v1.PageDocument[productgrp.AppProduct]{
+			resp:       &web.PageDocument[productgrp.AppProduct]{},
+			expResp: &web.PageDocument[productgrp.AppProduct]{
 				Page:        1,
 				RowsPerPage: 10,
 				Total:       total,
 				Items:       toAppProducts(append(sd.admins[1].products, sd.users[1].products...)),
 			},
 			cmpFunc: func(x interface{}, y interface{}) string {
-				resp := x.(*v1.PageDocument[productgrp.AppProduct])
-				exp := y.(*v1.PageDocument[productgrp.AppProduct])
+				resp := x.(*web.PageDocument[productgrp.AppProduct])
+				exp := y.(*web.PageDocument[productgrp.AppProduct])
 
 				var found int
 				for _, r := range resp.Items {

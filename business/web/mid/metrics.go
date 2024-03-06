@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/testvergecloud/testApi/business/web/v1/metrics"
+	"github.com/testvergecloud/testApi/business/web/metrics"
 	"github.com/testvergecloud/testApi/foundation/web"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web/auth"
 	"github.com/testvergecloud/testApi/foundation/keystore"
 	"github.com/testvergecloud/testApi/foundation/logger"
 

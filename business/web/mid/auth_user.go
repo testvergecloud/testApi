@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -51,23 +51,23 @@ func setUser(ctx context.Context, usr user.User) context.Context {
 // from the DB if a user id is specified in the call. Depending on the rule
 // specified, the userid from the claims may be compared with the specified
 // user id.
-func AuthorizeUser(a *auth.Auth, rule string, usrCore *user.Core) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func AuthorizeUser(a *auth.Auth, rule string, usrCore *user.Core) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			var userID uuid.UUID
 
-			if id := web.Param(r, "user_id"); id != "" {
+			if id := wf.Param(r, "user_id"); id != "" {
 				var err error
 				userID, err = uuid.Parse(id)
 				if err != nil {
-					return v1.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
+					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
 				}
 
 				usr, err := usrCore.QueryByID(ctx, userID)
 				if err != nil {
 					switch {
 					case errors.Is(err, user.ErrNotFound):
-						return v1.NewTrustedError(err, http.StatusNoContent)
+						return wb.NewTrustedError(err, http.StatusNoContent)
 					default:
 						return fmt.Errorf("querybyid: userID[%s]: %w", userID, err)
 					}

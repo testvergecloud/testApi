@@ -7,7 +7,7 @@ import (
 	"github.com/testvergecloud/testApi/business/core/crud/product"
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/data/dbtest"
-	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/business/web/order"
 )
 
 func createProductSeed(dbTest *dbtest.Test) (seedData, error) {

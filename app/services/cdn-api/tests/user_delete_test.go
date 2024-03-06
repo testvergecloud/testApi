@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
+	"github.com/testvergecloud/testApi/business/web"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -38,8 +38,8 @@ func userDelete401(sd seedData) []tableData {
 			token:      "",
 			method:     http.MethodDelete,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -50,8 +50,8 @@ func userDelete401(sd seedData) []tableData {
 			token:      sd.users[0].token + "A",
 			method:     http.MethodDelete,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},
@@ -62,8 +62,8 @@ func userDelete401(sd seedData) []tableData {
 			token:      sd.users[1].token,
 			method:     http.MethodDelete,
 			statusCode: http.StatusUnauthorized,
-			resp:       &v1.ErrorResponse{},
-			expResp:    &v1.ErrorResponse{Error: "Unauthorized"},
+			resp:       &web.ErrorResponse{},
+			expResp:    &web.ErrorResponse{Error: "Unauthorized"},
 			cmpFunc: func(x interface{}, y interface{}) string {
 				return cmp.Diff(x, y)
 			},

@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/testvergecloud/testApi/business/core/crud/delegate"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	"github.com/testvergecloud/testApi/business/web/mid"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"
 

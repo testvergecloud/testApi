@@ -5,8 +5,8 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/views/vproduct"
 	"github.com/testvergecloud/testApi/business/core/views/vproduct/stores/vproductdb"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	"github.com/testvergecloud/testApi/business/web/mid"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"
 

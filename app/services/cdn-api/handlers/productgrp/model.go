@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/testvergecloud/testApi/business/core/crud/product"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
+	"github.com/testvergecloud/testApi/business/web/mid"
 	"github.com/testvergecloud/testApi/foundation/validate"
 )
 

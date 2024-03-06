@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -18,8 +18,8 @@ var (
 )
 
 // Authenticate validates a JWT from the `Authorization` header.
-func Authenticate(a *auth.Auth) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func Authenticate(a *auth.Auth) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			claims, err := a.Authenticate(ctx, r.Header.Get("authorization"))
 			if err != nil {
@@ -32,7 +32,7 @@ func Authenticate(a *auth.Auth) web.MidHandler {
 
 			subjectID, err := uuid.Parse(claims.Subject)
 			if err != nil {
-				return v1.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
+				return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
 			}
 
 			ctx = setUserID(ctx, subjectID)
@@ -48,8 +48,8 @@ func Authenticate(a *auth.Auth) web.MidHandler {
 }
 
 // Authorize executes the specified role and does not extract any domain data.
-func Authorize(a *auth.Auth, rule string) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func Authorize(a *auth.Auth, rule string) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			claims := getClaims(ctx)
 			if err := a.Authorize(ctx, claims, uuid.UUID{}, rule); err != nil {

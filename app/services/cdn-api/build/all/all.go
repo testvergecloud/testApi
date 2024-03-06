@@ -8,7 +8,7 @@ import (
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/trangrp"
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/usergrp"
 	"github.com/testvergecloud/testApi/app/services/cdn-api/handlers/vproductgrp"
-	"github.com/testvergecloud/testApi/business/web/v1/mux"
+	"github.com/testvergecloud/testApi/business/web/mux"
 	"github.com/testvergecloud/testApi/foundation/web"
 )
 

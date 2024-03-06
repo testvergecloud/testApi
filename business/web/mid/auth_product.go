@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/crud/product"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -35,23 +35,23 @@ func setProduct(ctx context.Context, prd product.Product) context.Context {
 // product from the DB if a product id is specified in the call. Depending on
 // the rule specified, the userid from the claims may be compared with the
 // specified user id from the product.
-func AuthorizeProduct(a *auth.Auth, rule string, prdCore *product.Core) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
+func AuthorizeProduct(a *auth.Auth, rule string, prdCore *product.Core) wf.MidHandler {
+	m := func(handler wf.Handler) wf.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			var userID uuid.UUID
 
-			if id := web.Param(r, "product_id"); id != "" {
+			if id := wf.Param(r, "product_id"); id != "" {
 				var err error
 				productID, err := uuid.Parse(id)
 				if err != nil {
-					return v1.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
+					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
 				}
 
 				prd, err := prdCore.QueryByID(ctx, productID)
 				if err != nil {
 					switch {
 					case errors.Is(err, product.ErrNotFound):
-						return v1.NewTrustedError(err, http.StatusNoContent)
+						return wb.NewTrustedError(err, http.StatusNoContent)
 					default:
 						return fmt.Errorf("querybyid: productID[%s]: %w", productID, err)
 					}

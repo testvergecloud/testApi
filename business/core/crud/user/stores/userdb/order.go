@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/business/web/order"
 )
 
 var orderByFields = map[string]string{

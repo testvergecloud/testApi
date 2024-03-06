@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/views/vproduct"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/page"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/page"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 )
 
 type handlers struct {
@@ -49,5 +49,5 @@ func (h *handlers) Query(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("count: %w", err)
 	}
 
-	return web.Respond(ctx, w, v1.NewPageDocument(toAppProducts(prds), total, page.Number, page.RowsPerPage), http.StatusOK)
+	return wf.Respond(ctx, w, wb.NewPageDocument(toAppProducts(prds), total, page.Number, page.RowsPerPage), http.StatusOK)
 }

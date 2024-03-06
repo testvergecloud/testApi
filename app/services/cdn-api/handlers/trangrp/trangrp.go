@@ -7,8 +7,8 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/crud/product"
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wb "github.com/testvergecloud/testApi/business/web"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 )
 
 type handlers struct {
@@ -31,18 +31,18 @@ func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Re
 	}
 
 	var app AppNewTran
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	np, err := toCoreNewProduct(app.Product)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	nu, err := toCoreNewUser(app.User)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	usr, err := h.user.Create(ctx, nu)
@@ -57,5 +57,5 @@ func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	return web.Respond(ctx, w, toAppProduct(prd), http.StatusCreated)
+	return wf.Respond(ctx, w, toAppProduct(prd), http.StatusCreated)
 }

@@ -514,9 +514,9 @@ func findAppModel(group string, modelName string) ([]Field, error) {
 
 	switch {
 	case strings.Contains(modelName, "ErrorResponse"):
-		file, err = parser.ParseFile(fset, "business/web/v1/v1.go", nil, parser.ParseComments)
+		file, err = parser.ParseFile(fset, "business/web.go", nil, parser.ParseComments)
 	case strings.Contains(modelName, "PageDocument"):
-		file, err = parser.ParseFile(fset, "business/web/v1/v1.go", nil, parser.ParseComments)
+		file, err = parser.ParseFile(fset, "business/web.go", nil, parser.ParseComments)
 	default:
 		file, err = parser.ParseFile(fset, "app/services/cdn-api/handlers/"+group+"/model.go", nil, parser.ParseComments)
 	}

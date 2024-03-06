@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/testvergecloud/testApi/business/core/{{.DomainL}}"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-    "github.com/testvergecloud/testApi/business/web/v1/auth"
+	"github.com/testvergecloud/testApi/business/web"
+    "github.com/testvergecloud/testApi/business/web/auth"
 	"github.com/testvergecloud/testApi/foundation/web"
 	"github.com/google/uuid"
 )
@@ -41,14 +41,14 @@ func Authorize{{.DomainU}}(a *auth.Auth, rule string, {{.DomainVar}}Core *{{.Dom
 				var err error
 				{{.DomainL}}ID, err := uuid.Parse(id)
 				if err != nil {
-					return v1.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
+					return web.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
 				}
 
 				{{.DomainVar}}, err := {{.DomainVar}}Core.QueryByID(ctx, {{.DomainL}}ID)
 				if err != nil {
 					switch {
 					case errors.Is(err, {{.DomainL}}.ErrNotFound):
-						return v1.NewTrustedError(err, http.StatusNoContent)
+						return web.NewTrustedError(err, http.StatusNoContent)
 					default:
 						return fmt.Errorf("querybyid: {{.DomainL}}ID[%s]: %w", {{.DomainL}}ID, err)
 					}

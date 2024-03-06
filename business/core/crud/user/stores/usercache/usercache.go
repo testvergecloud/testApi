@@ -8,7 +8,7 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/data/transaction"
-	"github.com/testvergecloud/testApi/business/web/v1/order"
+	"github.com/testvergecloud/testApi/business/web/order"
 	"github.com/testvergecloud/testApi/foundation/logger"
 
 	"github.com/google/uuid"

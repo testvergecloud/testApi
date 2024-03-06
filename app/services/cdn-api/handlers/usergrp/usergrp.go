@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
-	v1 "github.com/testvergecloud/testApi/business/web/v1"
-	"github.com/testvergecloud/testApi/business/web/v1/auth"
-	"github.com/testvergecloud/testApi/business/web/v1/mid"
-	"github.com/testvergecloud/testApi/business/web/v1/page"
+	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/testvergecloud/testApi/business/web/auth"
+	"github.com/testvergecloud/testApi/business/web/mid"
+	"github.com/testvergecloud/testApi/business/web/page"
 	"github.com/testvergecloud/testApi/foundation/validate"
-	"github.com/testvergecloud/testApi/foundation/web"
+	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -35,36 +35,36 @@ func new(user *user.Core, auth *auth.Auth) *handlers {
 // create adds a new user to the system.
 func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppNewUser
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	nc, err := toCoreNewUser(app)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	usr, err := h.user.Create(ctx, nc)
 	if err != nil {
 		if errors.Is(err, user.ErrUniqueEmail) {
-			return v1.NewTrustedError(err, http.StatusConflict)
+			return wb.NewTrustedError(err, http.StatusConflict)
 		}
 		return fmt.Errorf("create: usr[%+v]: %w", usr, err)
 	}
 
-	return web.Respond(ctx, w, toAppUser(usr), http.StatusCreated)
+	return wf.Respond(ctx, w, toAppUser(usr), http.StatusCreated)
 }
 
 // update updates a user in the system.
 func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var app AppUpdateUser
-	if err := web.Decode(r, &app); err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+	if err := wf.Decode(r, &app); err != nil {
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	uu, err := toCoreUpdateUser(app)
 	if err != nil {
-		return v1.NewTrustedError(err, http.StatusBadRequest)
+		return wb.NewTrustedError(err, http.StatusBadRequest)
 	}
 
 	usr := mid.GetUser(ctx)
@@ -74,7 +74,7 @@ func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("update: userID[%s] uu[%+v]: %w", usr.ID, uu, err)
 	}
 
-	return web.Respond(ctx, w, toAppUser(updUsr), http.StatusOK)
+	return wf.Respond(ctx, w, toAppUser(updUsr), http.StatusOK)
 }
 
 // delete removes a user from the system.
@@ -85,7 +85,7 @@ func (h *handlers) delete(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return fmt.Errorf("delete: userID[%s]: %w", usr.ID, err)
 	}
 
-	return web.Respond(ctx, w, nil, http.StatusNoContent)
+	return wf.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // query returns a list of users with paging.
@@ -115,17 +115,17 @@ func (h *handlers) query(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("count: %w", err)
 	}
 
-	return web.Respond(ctx, w, v1.NewPageDocument(toAppUsers(users), total, page.Number, page.RowsPerPage), http.StatusOK)
+	return wf.Respond(ctx, w, wb.NewPageDocument(toAppUsers(users), total, page.Number, page.RowsPerPage), http.StatusOK)
 }
 
 // queryByID returns a user by its ID.
 func (h *handlers) queryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return web.Respond(ctx, w, toAppUser(mid.GetUser(ctx)), http.StatusOK)
+	return wf.Respond(ctx, w, toAppUser(mid.GetUser(ctx)), http.StatusOK)
 }
 
 // token provides an API token for the authenticated user.
 func (h *handlers) token(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	kid := web.Param(r, "kid")
+	kid := wf.Param(r, "kid")
 	if kid == "" {
 		return validate.NewFieldsError("kid", errors.New("missing kid"))
 	}
@@ -144,7 +144,7 @@ func (h *handlers) token(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrNotFound):
-			return v1.NewTrustedError(err, http.StatusNotFound)
+			return wb.NewTrustedError(err, http.StatusNotFound)
 		case errors.Is(err, user.ErrAuthenticationFailure):
 			return auth.NewAuthError(err.Error())
 		default:
@@ -167,5 +167,5 @@ func (h *handlers) token(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("generatetoken: %w", err)
 	}
 
-	return web.Respond(ctx, w, toToken(token), http.StatusOK)
+	return wf.Respond(ctx, w, toToken(token), http.StatusOK)
 }
