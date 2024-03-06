@@ -24,7 +24,7 @@ var methods = map[string]string{
 }
 
 func Routes(version string) ([]Route, error) {
-	dirEntries, err := os.ReadDir("app/services/sales-api/v1/handlers")
+	dirEntries, err := os.ReadDir("app/services/cdn-api/handlers")
 	if err != nil {
 		return nil, fmt.Errorf("ReadDir: %w", err)
 	}
@@ -44,7 +44,7 @@ func Routes(version string) ([]Route, error) {
 			file  string
 		}{
 			entry.Name(),
-			fmt.Sprintf("app/services/sales-api/v1/handlers/%s/route.go", entry.Name()),
+			fmt.Sprintf("app/services/cdn-api/handlers/%s/route.go", entry.Name()),
 		})
 	}
 
@@ -59,7 +59,6 @@ func Routes(version string) ([]Route, error) {
 		}
 
 		f := func(n ast.Node) bool {
-
 			// We only care if this node is a function declaration.
 			funcDecl, ok := n.(*ast.FuncDecl)
 			if !ok {
@@ -128,7 +127,7 @@ func Routes(version string) ([]Route, error) {
 					Handler:  handler.Sel.Name,
 					Group:    item.group,
 					ErrorDoc: "ErrorResponse",
-					File:     fmt.Sprintf("app/services/sales-api/%s/handlers/%s/%s.go", version, item.group, item.group),
+					File:     fmt.Sprintf("app/services/cdn-api/%s/handlers/%s/%s.go", version, item.group, item.group),
 				})
 			}
 
@@ -155,7 +154,6 @@ func Records(routes []Route) ([]Record, error) {
 		}
 
 		f := func(n ast.Node) bool {
-
 			// We only care if this node is a function declaration.
 			funcDecl, ok := n.(*ast.FuncDecl)
 			if !ok {
@@ -192,7 +190,6 @@ func Records(routes []Route) ([]Record, error) {
 }
 
 func parseWebAPI(fset *token.FileSet, file *ast.File, funcDecl *ast.FuncDecl, route Route) (bool, Record, error) {
-
 	// Capture the line number for this function declaration.
 	line := fset.Position(funcDecl.Pos()).Line
 
@@ -200,7 +197,6 @@ func parseWebAPI(fset *token.FileSet, file *ast.File, funcDecl *ast.FuncDecl, ro
 	// comment that exist in the line above the function declaration.
 	var cGroup *ast.CommentGroup
 	for _, cGroup = range file.Comments {
-
 		// We are looking for the comments associated with this function.
 		if fset.Position(cGroup.End()).Line == line-1 {
 			break
@@ -303,7 +299,6 @@ func parseWebAPI(fset *token.FileSet, file *ast.File, funcDecl *ast.FuncDecl, ro
 // This function looks for the web.Respond call at the end of each handler.
 // Once found, it returns the name of the type that is used in the trusted.
 func findOutputDocument(body *ast.BlockStmt) (funcName string, status string) {
-
 	// Walk through the body of the function looking for the web.Decode
 	// function call.
 	for _, stmt := range body.List {
@@ -377,7 +372,6 @@ func findOutputDocument(body *ast.BlockStmt) (funcName string, status string) {
 }
 
 func findInputDocument(body *ast.BlockStmt) string {
-
 	// Walk through the body of the function looking for the web.Decode
 	// function call.
 	for _, stmt := range body.List {
@@ -463,7 +457,7 @@ func findAppFunctionFromModel(group string, funcName string) (string, bool, erro
 	var idt *ast.Ident
 	var slice bool
 
-	file, err := parser.ParseFile(fset, "app/services/sales-api/v1/handlers/"+group+"/model.go", nil, parser.ParseComments)
+	file, err := parser.ParseFile(fset, "app/services/cdn-api/handlers/"+group+"/model.go", nil, parser.ParseComments)
 	if err != nil {
 		return "", false, fmt.Errorf("ParseFile: %w", err)
 	}
@@ -524,7 +518,7 @@ func findAppModel(group string, modelName string) ([]Field, error) {
 	case strings.Contains(modelName, "PageDocument"):
 		file, err = parser.ParseFile(fset, "business/web/v1/v1.go", nil, parser.ParseComments)
 	default:
-		file, err = parser.ParseFile(fset, "app/services/sales-api/v1/handlers/"+group+"/model.go", nil, parser.ParseComments)
+		file, err = parser.ParseFile(fset, "app/services/cdn-api/handlers/"+group+"/model.go", nil, parser.ParseComments)
 	}
 
 	if err != nil {
@@ -534,7 +528,6 @@ func findAppModel(group string, modelName string) ([]Field, error) {
 	var fields []Field
 
 	f := func(n ast.Node) bool {
-
 		// We only care to look at types.
 		typeSpec, ok := n.(*ast.TypeSpec)
 		if !ok {
@@ -703,7 +696,7 @@ func findQueryVars(body *ast.BlockStmt, group string) (QueryVars, error) {
 func findFilters(group string) ([]string, error) {
 	fset := token.NewFileSet()
 
-	file, err := parser.ParseFile(fset, "app/services/sales-api/v1/handlers/"+group+"/filter.go", nil, parser.ParseComments)
+	file, err := parser.ParseFile(fset, "app/services/cdn-api/handlers/"+group+"/filter.go", nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("ParseFile: %w", err)
 	}
@@ -711,7 +704,6 @@ func findFilters(group string) ([]string, error) {
 	var filterBy []string
 
 	f := func(n ast.Node) bool {
-
 		// We only care if this node is a function declaration.
 		funcDecl, ok := n.(*ast.FuncDecl)
 		if !ok {
@@ -770,7 +762,7 @@ func findFilters(group string) ([]string, error) {
 func findOrders(group string) ([]string, error) {
 	fset := token.NewFileSet()
 
-	file, err := parser.ParseFile(fset, "app/services/sales-api/v1/handlers/"+group+"/order.go", nil, parser.ParseComments)
+	file, err := parser.ParseFile(fset, "app/services/cdn-api/handlers/"+group+"/order.go", nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("ParseFile: %w", err)
 	}
@@ -778,7 +770,6 @@ func findOrders(group string) ([]string, error) {
 	var orderBy []string
 
 	f := func(n ast.Node) bool {
-
 		// We only care if this node is a function declaration.
 		funcDecl, ok := n.(*ast.FuncDecl)
 		if !ok {

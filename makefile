@@ -87,7 +87,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 #   $ go run app/tooling/docs/main.go -out json
 #
 #   Adding New Domain To System
-#   $ go run app/tooling/sales-admin/main.go domain sale
+#   $ go run app/tooling/cdn-admin/main.go domain cdn
 
 # ==============================================================================
 # CLASS NOTES
@@ -99,7 +99,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 # 	To generate a private/public key PEM file.
 # 	$ openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
 # 	$ openssl rsa -pubout -in private.pem -out public.pem
-# 	$ ./sales-admin genkey
+# 	$ ./cdn-admin genkey
 #
 # Testing Coverage
 # 	$ go test -coverprofile p.out
@@ -132,10 +132,10 @@ LOKI            := grafana/loki:2.9.0
 PROMTAIL        := grafana/promtail:2.9.0
 
 KIND_CLUSTER    := vergecloud-starter-cluster
-NAMESPACE       := sales-system
-APP             := sales
+NAMESPACE       := cdn-system
+APP             := cdn
 BASE_IMAGE_NAME := vergecloud/service
-SERVICE_NAME    := sales-api
+SERVICE_NAME    := cdn-api
 VERSION         := 0.0.1
 SERVICE_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME):$(VERSION)
 METRICS_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME)-metrics:$(VERSION)
@@ -230,13 +230,13 @@ dev-load:
 # podman is currently experimental, and fails for some reason with kind load
 # docker-image (possibly a tagging issue?) but the below works.
 dev-load-podman:
-	docker image save $(SERVICE_IMAGE):$(VERSION) -o image-sales
-	kind load image-archive image-sales --name $(KIND_CLUSTER) 
-	rm -f image-sales-metrics image-sales
+	docker image save $(SERVICE_IMAGE):$(VERSION) -o image-cdn
+	kind load image-archive image-cdn --name $(KIND_CLUSTER) 
+	rm -f image-cdn-metrics image-cdn
 
-	rm -f image-sales-metrics image-sales
-	docker image save $(METRICS_IMAGE):$(VERSION) -o image-sales-metrics
-	kind load image-archive image-sales-metrics --name $(KIND_CLUSTER) 
+	rm -f image-cdn-metrics image-cdn
+	docker image save $(METRICS_IMAGE):$(VERSION) -o image-cdn-metrics
+	kind load image-archive image-cdn-metrics --name $(KIND_CLUSTER) 
 
 dev-apply:
 	kustomize build zarf/k8s/dev/grafana | kubectl apply -f -
@@ -248,7 +248,7 @@ dev-apply:
 	kustomize build zarf/k8s/dev/database | kubectl apply -f -
 	kubectl rollout status --namespace=$(NAMESPACE) --watch --timeout=120s sts/database
 
-	kustomize build zarf/k8s/dev/sales | kubectl apply -f -
+	kustomize build zarf/k8s/dev/cdn | kubectl apply -f -
 	kubectl wait pods --namespace=$(NAMESPACE) --selector app=$(APP) --timeout=120s --for=condition=Ready
 
 dev-restart:
@@ -272,7 +272,7 @@ dev-describe-node:
 dev-describe-deployment:
 	kubectl describe deployment --namespace=$(NAMESPACE) $(APP)
 
-dev-describe-sales:
+dev-describe-cdn:
 	kubectl describe pod --namespace=$(NAMESPACE) -l app=$(APP)
 
 dev-describe-database:
@@ -301,7 +301,7 @@ dev-logs-promtail:
 # ------------------------------------------------------------------------------
 
 dev-services-delete:
-	kustomize build zarf/k8s/dev/sales | kubectl delete -f -
+	kustomize build zarf/k8s/dev/cdn | kubectl delete -f -
 	kustomize build zarf/k8s/dev/grafana | kubectl delete -f -
 	kustomize build zarf/k8s/dev/tempo | kubectl delete -f -
 	kustomize build zarf/k8s/dev/loki | kubectl delete -f -
@@ -319,7 +319,7 @@ dev-events-warn:
 	kubectl get ev --field-selector type=Warning --sort-by metadata.creationTimestamp
 
 dev-shell:
-	kubectl exec --namespace=$(NAMESPACE) -it $(shell kubectl get pods --namespace=$(NAMESPACE) | grep sales | cut -c1-26) --container sales-api -- /bin/sh
+	kubectl exec --namespace=$(NAMESPACE) -it $(shell kubectl get pods --namespace=$(NAMESPACE) | grep cdn | cut -c1-26) --container $(SERVICE_NAME) -- /bin/sh
 
 dev-database-restart:
 	kubectl rollout restart statefulset database --namespace=$(NAMESPACE)
@@ -328,10 +328,10 @@ dev-database-restart:
 # Administration
 
 migrate:
-	export SALES_DB_HOST_PORT=localhost; go run app/tooling/sales-admin/main.go migrate
+	export CDN_DB_HOST_PORT=localhost; go run app/tooling/cdn-admin/main.go migrate
 
 seed: migrate
-	export SALES_DB_HOST_PORT=localhost; go run app/tooling/sales-admin/main.go seed
+	export CDN_DB_HOST_PORT=localhost; go run app/tooling/cdn-admin/main.go seed
 
 pgcli:
 	pgcli postgresql://postgres:postgres@localhost
@@ -343,7 +343,7 @@ readiness:
 	curl -il http://localhost:3000/v1/readiness
 
 token-gen:
-	export SALES_DB_HOST_PORT=localhost; go run app/tooling/sales-admin/main.go gentoken 5cf37266-3473-4006-984f-9325122678b7 54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
+	export CDN_DB_HOST_PORT=localhost; go run app/tooling/cdn-admin/main.go gentoken 5cf37266-3473-4006-984f-9325122678b7 54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
 
 docs:
 	go run app/tooling/docs/main.go --browser
@@ -435,10 +435,10 @@ list:
 # Class Stuff
 
 run:
-	go run app/services/sales-api/main.go | go run app/tooling/logfmt/main.go
+	go run main.go | go run app/tooling/logfmt/main.go
 
 run-help:
-	go run app/services/sales-api/main.go --help | go run app/tooling/logfmt/main.go
+	go run main.go --help | go run app/tooling/logfmt/main.go
 
 curl:
 	curl -il http://localhost:3000/v1/hack
@@ -450,7 +450,7 @@ load-hack:
 	hey -m GET -c 100 -n 100000 "http://localhost:3000/v1/hack"
 
 admin:
-	go run app/tooling/sales-admin/main.go
+	go run app/tooling/cdn-admin/main.go
 
 ready:
 	curl -il http://localhost:3000/v1/readiness
@@ -482,7 +482,7 @@ talk-apply:
 	kustomize build zarf/k8s/dev/database | kubectl apply -f -
 	kubectl rollout status --namespace=$(NAMESPACE) --watch --timeout=120s sts/database
 
-	kustomize build zarf/k8s/dev/sales | kubectl apply -f -
+	kustomize build zarf/k8s/dev/cdn | kubectl apply -f -
 	kubectl wait pods --namespace=$(NAMESPACE) --selector app=$(APP) --timeout=120s --for=condition=Ready
 
 talk-build: all dev-load talk-apply

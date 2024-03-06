@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: cdn-system
+data:
+  db_hostport: "database-service.cdn-system.svc.cluster.local"
+  db_user: "postgres"
+  db_password: "postgres"
+  db_disabletls: "true"
