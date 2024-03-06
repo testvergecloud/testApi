@@ -28,11 +28,11 @@ app.env
 
 # Ardan Labs gitignore
 # Project
-app/services/sales-api/sales-api
+app/services/cdn-api/cdn-api
 app/services/metrics/metrics
-app/tooling/sales-admin/sales-admin
-app/tooling/sales-admin/logfmt
-app/tooling/sales-admin/docs
+app/tooling/cdn-admin/cdn-admin
+app/tooling/cdn-admin/logfmt
+app/tooling/cdn-admin/docs
 .excalidraw
 
 # Environment

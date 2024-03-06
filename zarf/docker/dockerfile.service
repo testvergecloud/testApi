@@ -1,5 +1,5 @@
 # Build the Go Binary.
-FROM golang:1.22 as build_sales-api
+FROM golang:1.22 as build_cdn-api
 ENV CGO_ENABLED 0
 ARG BUILD_REF
 
@@ -15,11 +15,11 @@ ARG BUILD_REF
 COPY . /service
 
 # Build the admin binary.
-WORKDIR /service/app/tooling/sales-admin
+WORKDIR /service/app/tooling/cdn-admin
 RUN go build -ldflags "-X main.build=${BUILD_REF}"
 
 # Build the service binary.
-WORKDIR /service/app/services/sales-api
+WORKDIR /service/app/services/cdn-api
 RUN go build -ldflags "-X main.build=${BUILD_REF}"
 
 
@@ -27,18 +27,18 @@ RUN go build -ldflags "-X main.build=${BUILD_REF}"
 FROM alpine:3.19
 ARG BUILD_DATE
 ARG BUILD_REF
-RUN addgroup -g 1000 -S sales && \
-    adduser -u 1000 -h /service -G sales -S sales
-COPY --from=build_sales-api --chown=sales:sales /service/zarf/keys/. /service/zarf/keys/.
-COPY --from=build_sales-api --chown=sales:sales /service/app/tooling/sales-admin/sales-admin /service/sales-admin
-COPY --from=build_sales-api --chown=sales:sales /service/app/services/sales-api/sales-api /service/sales-api
+RUN addgroup -g 1000 -S cdn && \
+    adduser -u 1000 -h /service -G cdn -S cdn
+COPY --from=build_cdn-api --chown=cdn:cdn /service/zarf/keys/. /service/zarf/keys/.
+COPY --from=build_cdn-api --chown=cdn:cdn /service/app/tooling/cdn-admin/cdn-admin /service/cdn-admin
+COPY --from=build_cdn-api --chown=cdn:cdn /service/app/services/cdn-api/cdn-api /service/cdn-api
 WORKDIR /service
-USER sales
-CMD ["./sales-api"]
+USER cdn
+CMD ["./cdn-api"]
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
-    org.opencontainers.image.title="sales-api" \
+    org.opencontainers.image.title="cdn-api" \
     org.opencontainers.image.authors="William Kennedy <bill@ardanlabs.com>" \
-    org.opencontainers.image.source="https://github.com/testvergecloud/testApi/tree/master/app/services/sales-api" \
+    org.opencontainers.image.source="https://github.com/testvergecloud/testApi/tree/master/app/services/cdn-api" \
     org.opencontainers.image.revision="${BUILD_REF}" \
     org.opencontainers.image.vendor="Ardan Labs"
