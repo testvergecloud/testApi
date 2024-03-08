@@ -7,16 +7,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-json-experiment/json"
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
-
-	"github.com/go-json-experiment/json"
 )
 
 // Users retrieves all users from the database.
-func Users(log *logger.Logger, cfg sqldb.Config, pageNumber string, rowsPerPage string) error {
+func Users(log *logger.Logger, cfg *config.Config, pageNumber string, rowsPerPage string) error {
 	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)

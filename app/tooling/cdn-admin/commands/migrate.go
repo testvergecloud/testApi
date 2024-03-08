@@ -8,13 +8,14 @@ import (
 
 	"github.com/testvergecloud/testApi/business/data/migrate"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/config"
 )
 
 // ErrHelp provides context that help was given.
 var ErrHelp = errors.New("provided help")
 
 // Migrate creates the schema in the database.
-func Migrate(cfg sqldb.Config) error {
+func Migrate(cfg *config.Config) error {
 	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)

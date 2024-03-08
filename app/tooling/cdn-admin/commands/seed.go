@@ -7,10 +7,11 @@ import (
 
 	"github.com/testvergecloud/testApi/business/data/migrate"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/config"
 )
 
 // Seed loads test data into the database.
-func Seed(cfg sqldb.Config) error {
+func Seed(cfg *config.Config) error {
 	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
