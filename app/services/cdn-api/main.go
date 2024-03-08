@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"expvar"
 	"fmt"
 	"net/http"
@@ -20,11 +19,11 @@ import (
 	"github.com/testvergecloud/testApi/business/web/auth"
 	"github.com/testvergecloud/testApi/business/web/debug"
 	"github.com/testvergecloud/testApi/business/web/mux"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/keystore"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"
 
-	"github.com/ardanlabs/conf/v3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -32,6 +31,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	_ "go.uber.org/fx"
 )
 
 /*
@@ -44,6 +44,26 @@ var (
 )
 
 func main() {
+	// ServerModule := fx.Options(
+	// 	// domain.Module,
+	// 	// payment.Module,
+	// 	// plan.Module,
+	// 	// load_balancer.Module,
+	// 	// bulk.Module,
+	// 	// waf.Module,
+	// 	// app.Module,
+	// 	// health_check.Module,
+	// 	// dynamic_field.Module,
+	// 	// proxy.Module,
+	// 	// fx.Provide(server.NewCdnApiClient),
+	// 	// fx.Provide(server.NewGinHTTPServer),
+	// 	// fx.Provide(server.LoadConfig),
+	// 	// fx.Invoke(func(server *gin.Engine) {}),
+	// 	fx.Provide(LoadConfig),
+	// )
+
+	// fx.New(ServerModule).Run()
+
 	var log *logger.Logger
 
 	events := logger.Events{
@@ -71,95 +91,33 @@ func main() {
 func run(ctx context.Context, log *logger.Logger) error {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
-
 	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
 	// -------------------------------------------------------------------------
 	// Configuration
-
-	cfg := struct {
-		conf.Version
-		Web struct {
-			ReadTimeout        time.Duration `conf:"default:5s"`
-			WriteTimeout       time.Duration `conf:"default:10s"`
-			IdleTimeout        time.Duration `conf:"default:120s"`
-			ShutdownTimeout    time.Duration `conf:"default:20s"`
-			APIHost            string        `conf:"default:0.0.0.0:3000"`
-			DebugHost          string        `conf:"default:0.0.0.0:4000"`
-			CORSAllowedOrigins []string      `conf:"default:*"`
-		}
-		Auth struct {
-			KeysFolder string `conf:"default:zarf/keys/"`
-			ActiveKID  string `conf:"default:54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"`
-			Issuer     string `conf:"default:service project"`
-		}
-		DB struct {
-			User         string `conf:"default:postgres"`
-			Password     string `conf:"default:postgres,mask"`
-			HostPort     string `conf:"default:database-service.cdn-system.svc.cluster.local"`
-			Name         string `conf:"default:postgres"`
-			MaxIdleConns int    `conf:"default:2"`
-			MaxOpenConns int    `conf:"default:0"`
-			DisableTLS   bool   `conf:"default:true"`
-		}
-		Tempo struct {
-			ReporterURI string  `conf:"default:tempo.cdn-system.svc.cluster.local:4317"`
-			ServiceName string  `conf:"default:cdn-api"`
-			Probability float64 `conf:"default:0.05"`
-			// Shouldn't use a high Probability value in non-developer systems.
-			// 0.05 should be enough for most systems. Some might want to have
-			// this even lower.
-		}
-	}{
-		Version: conf.Version{
-			Build: build,
-			Desc:  "Service Project",
-		},
-	}
-
-	const prefix = "CDN"
-	help, err := conf.Parse(prefix, &cfg)
+	cfg, err := config.LoadConfig("../../..")
 	if err != nil {
-		if errors.Is(err, conf.ErrHelpWanted) {
-			fmt.Println(help)
-			return nil
-		}
-		return fmt.Errorf("parsing config: %w", err)
+		return fmt.Errorf("loading config: %w", err)
 	}
-
 	// -------------------------------------------------------------------------
 	// App Starting
 
 	log.Info(ctx, "starting service", "version", build)
 	defer log.Info(ctx, "shutdown complete")
 
-	out, err := conf.String(&cfg)
-	if err != nil {
-		return fmt.Errorf("generating config for output: %w", err)
-	}
-	log.Info(ctx, "startup", "config", out)
-
 	expvar.NewString("build").Set(build)
 
 	// -------------------------------------------------------------------------
 	// Database Support
 
-	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.HostPort)
+	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.HostPort)
 
-	db, err := sqldb.Open(sqldb.Config{
-		User:         cfg.DB.User,
-		Password:     cfg.DB.Password,
-		HostPort:     cfg.DB.HostPort,
-		Name:         cfg.DB.Name,
-		MaxIdleConns: cfg.DB.MaxIdleConns,
-		MaxOpenConns: cfg.DB.MaxOpenConns,
-		DisableTLS:   cfg.DB.DisableTLS,
-	})
+	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connecting to db: %w", err)
 	}
 	defer func() {
-		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.DB.HostPort)
+		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.HostPort)
 		db.Close()
 	}()
 
@@ -172,7 +130,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	// Vault has created these files already. How that happens is not our
 	// concern.
 	ks := keystore.New()
-	if err := ks.LoadRSAKeys(os.DirFS(cfg.Auth.KeysFolder)); err != nil {
+	if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
 		return fmt.Errorf("reading keys: %w", err)
 	}
 
@@ -193,9 +151,9 @@ func run(ctx context.Context, log *logger.Logger) error {
 	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
 
 	traceProvider, err := startTracing(
-		cfg.Tempo.ServiceName,
-		cfg.Tempo.ReporterURI,
-		cfg.Tempo.Probability,
+		cfg.ServiceName,
+		cfg.ReporterURI,
+		cfg.Probability,
 	)
 	if err != nil {
 		return fmt.Errorf("starting tracing: %w", err)
@@ -208,10 +166,10 @@ func run(ctx context.Context, log *logger.Logger) error {
 	// Start Debug Service
 
 	go func() {
-		log.Info(ctx, "startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
+		log.Info(ctx, "startup", "status", "debug v1 router started", "host", cfg.DebugHost)
 
-		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.Mux()); err != nil {
-			log.Error(ctx, "shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "msg", err)
+		if err := http.ListenAndServe(cfg.DebugHost, debug.Mux()); err != nil {
+			log.Error(ctx, "shutdown", "status", "debug v1 router closed", "host", cfg.DebugHost, "msg", err)
 		}
 	}()
 
@@ -234,11 +192,11 @@ func run(ctx context.Context, log *logger.Logger) error {
 	}
 
 	api := http.Server{
-		Addr:         cfg.Web.APIHost,
-		Handler:      mux.WebAPI(cfgMux, buildRoutes(), mux.WithCORS(cfg.Web.CORSAllowedOrigins)),
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
-		IdleTimeout:  cfg.Web.IdleTimeout,
+		Addr:         cfg.APIHost,
+		Handler:      mux.WebAPI(cfgMux, buildRoutes(), mux.WithCORS(cfg.CORSAllowedOrigins)),
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
 		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
 	}
 
@@ -261,7 +219,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 		log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
 		defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
 
-		ctx, cancel := context.WithTimeout(ctx, cfg.Web.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, cfg.ShutdownTimeout)
 		defer cancel()
 
 		if err := api.Shutdown(ctx); err != nil {
@@ -341,4 +299,12 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 	))
 
 	return traceProvider, nil
+}
+
+func LoadConfig() *config.Config {
+	c, err := config.LoadConfig("../../..")
+	if err != nil {
+		fmt.Errorf("loading config: %w", err)
+	}
+	return c
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
 	"github.com/testvergecloud/testApi/business/web/auth"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/keystore"
 	"github.com/testvergecloud/testApi/foundation/logger"
 
@@ -18,13 +19,13 @@ import (
 )
 
 // GenToken generates a JWT for the specified user.
-func GenToken(log *logger.Logger, dbConfig sqldb.Config, keyPath string, userID uuid.UUID, kid string) error {
+func GenToken(log *logger.Logger, cfg *config.Config, keyPath string, userID uuid.UUID, kid string) error {
 	if kid == "" {
 		fmt.Println("help: gentoken <user_id> <kid>")
 		return ErrHelp
 	}
 
-	db, err := sqldb.Open(dbConfig)
+	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

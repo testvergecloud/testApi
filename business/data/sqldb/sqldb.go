@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"
 
@@ -34,19 +35,19 @@ var (
 )
 
 // Config is the required properties to use the database.
-type Config struct {
-	User         string
-	Password     string
-	HostPort     string
-	Name         string
-	Schema       string
-	MaxIdleConns int
-	MaxOpenConns int
-	DisableTLS   bool
-}
+// type Config struct {
+// 	User         string
+// 	Password     string
+// 	HostPort     string
+// 	Name         string
+// 	Schema       string
+// 	MaxIdleConns int
+// 	MaxOpenConns int
+// 	DisableTLS   bool
+// }
 
 // Open knows how to open a database connection based on the configuration.
-func Open(cfg Config) (*sqlx.DB, error) {
+func Open(cfg *config.Config) (*sqlx.DB, error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
 		sslMode = "disable"

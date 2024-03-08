@@ -9,11 +9,12 @@ import (
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 )
 
 // UserAdd adds new users into the database.
-func UserAdd(log *logger.Logger, cfg sqldb.Config, name, email, password string) error {
+func UserAdd(log *logger.Logger, cfg *config.Config, name, email, password string) error {
 	if name == "" || email == "" || password == "" {
 		fmt.Println("help: useradd <name> <email> <password>")
 		return ErrHelp

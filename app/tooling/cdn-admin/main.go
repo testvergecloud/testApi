@@ -9,32 +9,31 @@ import (
 	"os"
 
 	"github.com/testvergecloud/testApi/app/tooling/cdn-admin/commands"
-	"github.com/testvergecloud/testApi/business/data/sqldb"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 
-	"github.com/ardanlabs/conf/v3"
 	"github.com/google/uuid"
 )
 
 var build = "develop"
 
-type config struct {
-	conf.Version
-	Args conf.Args
-	DB   struct {
-		User         string `conf:"default:postgres"`
-		Password     string `conf:"default:postgres,mask"`
-		HostPort     string `conf:"default:database-service.cdn-system.svc.cluster.local"`
-		Name         string `conf:"default:postgres"`
-		MaxIdleConns int    `conf:"default:2"`
-		MaxOpenConns int    `conf:"default:0"`
-		DisableTLS   bool   `conf:"default:true"`
-	}
-	Auth struct {
-		KeysFolder string `conf:"default:zarf/keys/"`
-		DefaultKID string `conf:"default:54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"`
-	}
-}
+// type config struct {
+// 	conf.Version
+// 	Args conf.Args
+// 	DB   struct {
+// 		User         string `conf:"default:postgres"`
+// 		Password     string `conf:"default:postgres,mask"`
+// 		HostPort     string `conf:"default:database-service.cdn-system.svc.cluster.local"`
+// 		Name         string `conf:"default:postgres"`
+// 		MaxIdleConns int    `conf:"default:2"`
+// 		MaxOpenConns int    `conf:"default:0"`
+// 		DisableTLS   bool   `conf:"default:true"`
+// 	}
+// 	Auth struct {
+// 		KeysFolder string `conf:"default:zarf/keys/"`
+// 		DefaultKID string `conf:"default:54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"`
+// 	}
+// }
 
 func main() {
 	log := logger.New(io.Discard, logger.LevelInfo, "ADMIN", func(context.Context) string { return "00000000-0000-0000-0000-000000000000" })
@@ -48,82 +47,73 @@ func main() {
 }
 
 func run(log *logger.Logger) error {
-	cfg := config{
-		Version: conf.Version{
-			Build: build,
-			Desc:  "copyright information here",
-		},
-	}
+	// cfg := config{
+	// 	Version: conf.Version{
+	// 		Build: build,
+	// 		Desc:  "copyright information here",
+	// 	},
+	// }
 
 	const prefix = "CDN"
-	help, err := conf.Parse(prefix, &cfg)
-	if err != nil {
-		if errors.Is(err, conf.ErrHelpWanted) {
-			fmt.Println(help)
-			return nil
-		}
+	// help, err := conf.Parse(prefix, &cfg)
+	// if err != nil {
+	// 	if errors.Is(err, conf.ErrHelpWanted) {
+	// 		fmt.Println(help)
+	// 		return nil
+	// 	}
 
-		out, err := conf.String(&cfg)
-		if err != nil {
-			return fmt.Errorf("generating config for output: %w", err)
-		}
-		log.Info(context.Background(), "startup", "config", out)
+	// 	out, err := conf.String(&cfg)
+	// 	if err != nil {
+	// 		return fmt.Errorf("generating config for output: %w", err)
+	// 	}
+	// 	log.Info(context.Background(), "startup", "config", out)
 
-		return fmt.Errorf("parsing config: %w", err)
-	}
+	// 	return fmt.Errorf("parsing config: %w", err)
+	// }
 
-	return processCommands(cfg.Args, log, cfg)
+	return processCommands(log)
 }
 
 // processCommands handles the execution of the commands specified on
 // the command line.
-func processCommands(args conf.Args, log *logger.Logger, cfg config) error {
-	dbConfig := sqldb.Config{
-		User:         cfg.DB.User,
-		Password:     cfg.DB.Password,
-		HostPort:     cfg.DB.HostPort,
-		Name:         cfg.DB.Name,
-		MaxIdleConns: cfg.DB.MaxIdleConns,
-		MaxOpenConns: cfg.DB.MaxOpenConns,
-		DisableTLS:   cfg.DB.DisableTLS,
-	}
-
-	switch args.Num(0) {
+func processCommands(log *logger.Logger) error {
+	cfg := LoadConfig()
+	switch os.Args[0] {
 	case "domain":
-		if err := commands.Domain(args.Num(1)); err != nil {
+		if err := commands.Domain(os.Args[1]); err != nil {
 			return fmt.Errorf("adding domain: %w", err)
 		}
 
 	case "migrate":
-		if err := commands.Migrate(dbConfig); err != nil {
+		if err := commands.Migrate(cfg); err != nil {
 			return fmt.Errorf("migrating database: %w", err)
 		}
 
 	case "seed":
-		if err := commands.Seed(dbConfig); err != nil {
+		if err := commands.Seed(cfg); err != nil {
 			return fmt.Errorf("seeding database: %w", err)
 		}
 
 	case "migrate-seed":
-		if err := commands.Migrate(dbConfig); err != nil {
+		if err := commands.Migrate(cfg); err != nil {
 			return fmt.Errorf("migrating database: %w", err)
 		}
-		if err := commands.Seed(dbConfig); err != nil {
+		if err := commands.Seed(cfg); err != nil {
 			return fmt.Errorf("seeding database: %w", err)
 		}
 
 	case "useradd":
-		name := args.Num(1)
-		email := args.Num(2)
-		password := args.Num(3)
-		if err := commands.UserAdd(log, dbConfig, name, email, password); err != nil {
+		name := os.Args[1]
+		email := os.Args[2]
+		password := os.Args[3]
+		if err := commands.UserAdd(log, cfg, name, email, password); err != nil {
 			return fmt.Errorf("adding user: %w", err)
 		}
 
 	case "users":
-		pageNumber := args.Num(1)
-		rowsPerPage := args.Num(2)
-		if err := commands.Users(log, dbConfig, pageNumber, rowsPerPage); err != nil {
+		pageNumber := os.Args[1]
+		rowsPerPage := os.Args[2]
+		if err := commands.Users(log, cfg, pageNumber, rowsPerPage); err != nil {
 			return fmt.Errorf("getting users: %w", err)
 		}
 
@@ -133,15 +123,15 @@ func processCommands(args conf.Args, log *logger.Logger, cfg config) error {
 		}
 
 	case "gentoken":
-		userID, err := uuid.Parse(args.Num(1))
+		userID, err := uuid.Parse(os.Args[1])
 		if err != nil {
 			return fmt.Errorf("generating token: %w", err)
 		}
-		kid := args.Num(2)
+		kid := os.Args[2]
 		if kid == "" {
-			kid = cfg.Auth.DefaultKID
+			kid = cfg.DefaultKID
 		}
-		if err := commands.GenToken(log, dbConfig, cfg.Auth.KeysFolder, userID, kid); err != nil {
+		if err := commands.GenToken(log, cfg, cfg.KeysFolder, userID, kid); err != nil {
 			return fmt.Errorf("generating token: %w", err)
 		}
 
@@ -158,4 +148,12 @@ func processCommands(args conf.Args, log *logger.Logger, cfg config) error {
 	}
 
 	return nil
+}
+
+func LoadConfig() *config.Config {
+	c, err := config.LoadConfig("../../..")
+	if err != nil {
+		fmt.Errorf("loading config: %w", err)
+	}
+	return c
 }

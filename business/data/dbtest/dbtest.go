@@ -28,6 +28,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmoiron/sqlx"
+	"github.com/testvergecloud/testApi/foundation/config"
 )
 
 // StartDB starts a database instance.
@@ -74,7 +75,7 @@ func NewTest(t *testing.T, c *docker.Container, testName string) *Test {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbM, err := sqldb.Open(sqldb.Config{
+	dbM, err := sqldb.Open(&config.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
@@ -103,7 +104,7 @@ func NewTest(t *testing.T, c *docker.Container, testName string) *Test {
 
 	// -------------------------------------------------------------------------
 
-	db, err := sqldb.Open(sqldb.Config{
+	db, err := sqldb.Open(&config.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
