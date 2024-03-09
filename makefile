@@ -435,10 +435,10 @@ list:
 # Class Stuff
 
 run:
-	go run main.go | go run app/tooling/logfmt/main.go
+	go run app/services/cdn-api/main.go | go run app/tooling/logfmt/main.go
 
 run-help:
-	go run main.go --help | go run app/tooling/logfmt/main.go
+	go run app/services/cdn-api/main.go --help | go run app/tooling/logfmt/main.go
 
 curl:
 	curl -il http://localhost:3000/v1/hack
