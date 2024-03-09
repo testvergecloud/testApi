@@ -31,7 +31,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	_ "go.uber.org/fx"
+	"go.uber.org/fx"
 )
 
 /*
@@ -44,61 +44,28 @@ var (
 )
 
 func main() {
-	// ServerModule := fx.Options(
-	// 	// domain.Module,
-	// 	// payment.Module,
-	// 	// plan.Module,
-	// 	// load_balancer.Module,
-	// 	// bulk.Module,
-	// 	// waf.Module,
-	// 	// app.Module,
-	// 	// health_check.Module,
-	// 	// dynamic_field.Module,
-	// 	// proxy.Module,
-	// 	// fx.Provide(server.NewCdnApiClient),
-	// 	// fx.Provide(server.NewGinHTTPServer),
-	// 	// fx.Provide(server.LoadConfig),
-	// 	// fx.Invoke(func(server *gin.Engine) {}),
-	// 	fx.Provide(LoadConfig),
-	// )
-
-	// fx.New(ServerModule).Run()
-
-	var log *logger.Logger
-
-	events := logger.Events{
-		Error: func(ctx context.Context, r logger.Record) {
-			log.Info(ctx, "******* SEND ALERT ******")
-		},
-	}
-
-	traceIDFn := func(ctx context.Context) string {
-		return web.GetTraceID(ctx)
-	}
-
-	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "CDN-API", traceIDFn, events)
+	ServerModule := fx.Options(
+		fx.Provide(loadConfig),
+		fx.Provide(initializeLogger),
+		fx.Invoke(run),
+	)
+	fx.New(ServerModule).Run()
 
 	// -------------------------------------------------------------------------
+	// log := InitializeLogger()
 
-	ctx := context.Background()
-
-	if err := run(ctx, log); err != nil {
-		log.Error(ctx, "startup", "msg", err)
-		os.Exit(1)
-	}
+	// if err := run(ctx, log); err != nil {
+	// 	log.Error(ctx, "startup", "msg", err)
+	// 	os.Exit(1)
+	// }
 }
 
-func run(ctx context.Context, log *logger.Logger) error {
+func run(cfg *config.Config, log *logger.Logger) {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
+	ctx := context.Background()
 	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
-	// -------------------------------------------------------------------------
-	// Configuration
-	cfg, err := config.LoadConfig(".")
-	if err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
 	// -------------------------------------------------------------------------
 	// App Starting
 
@@ -114,7 +81,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	db, err := sqldb.Open(cfg)
 	if err != nil {
-		return fmt.Errorf("connecting to db: %w", err)
+		log.Error(ctx, "connecting to db: ", err)
+		return
 	}
 	defer func() {
 		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.HostPort)
@@ -131,7 +99,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 	// concern.
 	ks := keystore.New()
 	if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
-		return fmt.Errorf("reading keys: %w", err)
+		log.Error(ctx, "reading keys: ", err)
+		return
 	}
 
 	authCfg := auth.Config{
@@ -142,7 +111,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	auth, err := auth.New(authCfg)
 	if err != nil {
-		return fmt.Errorf("constructing auth: %w", err)
+		log.Error(ctx, "constructing auth: ", err)
+		return
 	}
 
 	// -------------------------------------------------------------------------
@@ -156,7 +126,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 		cfg.Probability,
 	)
 	if err != nil {
-		return fmt.Errorf("starting tracing: %w", err)
+		log.Error(ctx, "starting tracing: ", err)
+		return
 	}
 	defer traceProvider.Shutdown(context.Background())
 
@@ -213,8 +184,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	select {
 	case err := <-serverErrors:
-		return fmt.Errorf("server error: %w", err)
-
+		log.Error(ctx, "server error: ", err)
+		return
 	case sig := <-shutdown:
 		log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
 		defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
@@ -224,11 +195,12 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 		if err := api.Shutdown(ctx); err != nil {
 			api.Close()
-			return fmt.Errorf("could not stop server gracefully: %w", err)
+			log.Error(ctx, "could not stop server gracefully: ", err)
+			return
 		}
 	}
 
-	return nil
+	return
 }
 
 func buildRoutes() mux.RouteAdder {
@@ -301,10 +273,29 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 	return traceProvider, nil
 }
 
-func LoadConfig() *config.Config {
-	c, err := config.LoadConfig(".")
+func loadConfig(log *logger.Logger) (*config.Config, error) {
+	c, err := config.LoadConfig("./foundation/env/api/")
 	if err != nil {
-		fmt.Errorf("loading config: %w", err)
+		return nil, err
 	}
-	return c
+
+	log.Info(context.Background(), "config load successfully", "config: ", c)
+	return c, nil
+}
+
+func initializeLogger() *logger.Logger {
+	var log *logger.Logger
+
+	events := logger.Events{
+		Error: func(ctx context.Context, r logger.Record) {
+			log.Info(ctx, "******* SEND ALERT ******")
+		},
+	}
+
+	traceIDFn := func(ctx context.Context) string {
+		return web.GetTraceID(ctx)
+	}
+
+	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "CDN-API", traceIDFn, events)
+	return log
 }
