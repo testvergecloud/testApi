@@ -95,7 +95,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	// -------------------------------------------------------------------------
 	// Configuration
-	cfg, err := config.LoadConfig("../../..")
+	cfg, err := config.LoadConfig(".")
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -302,7 +302,7 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 }
 
 func LoadConfig() *config.Config {
-	c, err := config.LoadConfig("../../..")
+	c, err := config.LoadConfig(".")
 	if err != nil {
 		fmt.Errorf("loading config: %w", err)
 	}

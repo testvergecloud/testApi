@@ -151,7 +151,7 @@ func processCommands(log *logger.Logger) error {
 }
 
 func LoadConfig() *config.Config {
-	c, err := config.LoadConfig("../../..")
+	c, err := config.LoadConfig(".")
 	if err != nil {
 		fmt.Errorf("loading config: %w", err)
 	}
