@@ -134,12 +134,12 @@ func NewTest(t *testing.T, c *docker.Container, testName string) *Test {
 
 	// -------------------------------------------------------------------------
 
-	cfg := auth.Config{
-		Log:       log,
-		DB:        db,
-		KeyLookup: &keyStore{},
-	}
-	a, err := auth.New(cfg)
+	// cfg := auth.Config{
+	// 	Log:       log,
+	// 	DB:        db,
+	// 	KeyLookup: &keyStore{},
+	// }
+	a, err := auth.New(&config.Config{}, db, &keyStore{}, log)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,8 +10,9 @@
             "request": "launch",
             "mode": "auto",
             "cwd": "${workspaceFolder}",
-            // "program": "app/services/cdn-api/main.go"
-            "program": "app/tooling/cdn-admin/main.go"
+            "program": "app/services/cdn-api/main.go"
+            // "program": "app/services/metrics/main.go"
+            // "program": "app/tooling/cdn-admin/main.go"
         }
     ]
 }

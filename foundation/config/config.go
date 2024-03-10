@@ -16,40 +16,74 @@ type Config struct {
 	*Auth
 	*DB
 	*Tempo
+	*Expvar
+	*Prometheus
+	*Collect
+	*Publish
 }
 
 // LoadConfig reads configuration from file or environment variables.
-func LoadConfig(path string) (*Config, error) {
-	w, err := LoadWebConfig(path, "web", "env")
-	if err != nil {
-		return nil, err
-	}
-	a, err := LoadAuthConfig(path, "auth", "env")
-	if err != nil {
-		return nil, err
-	}
-	db, err := LoadDBConfig(path, "db", "env")
-	if err != nil {
-		return nil, err
-	}
-	t, err := LoadTempoConfig(path, "tempo", "env")
-	if err != nil {
-		return nil, err
+func LoadConfig(path string, args ...string) (*Config, error) {
+	var cfg Config
+	cfg.setDefault()
+	for _, arg := range args {
+		switch arg {
+		case "web":
+			w, err := LoadWebConfig(path, "web", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Web = w
+		case "auth":
+			a, err := LoadAuthConfig(path, "auth", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Auth = a
+		case "db":
+			d, err := LoadDBConfig(path, "db", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.DB = d
+		case "tempo":
+			t, err := LoadTempoConfig(path, "tempo", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Tempo = t
+		case "expvar":
+			e, err := LoadExpvarConfig(path, "expvar", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Expvar = e
+		case "prometheus":
+			p, err := LoadPrometheusConfig(path, "prometheus", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Prometheus = p
+		case "collect":
+			c, err := LoadCollectConfig(path, "collect", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Collect = c
+		case "publish":
+			p, err := LoadPublishConfig(path, "publish", "env")
+			if err != nil {
+				return nil, err
+			}
+			cfg.Publish = p
+		}
 	}
 
-	c := Config{
-		Web:   w,
-		Auth:  a,
-		DB:    db,
-		Tempo: t,
-	}
-	c.setDefault()
-
-	return &c, nil
+	return &cfg, nil
 }
 
-func (c *Config) setDefault() {
-	c.Build = "develop"
-	c.Routes = "all"
-	c.Desc = "Service Project"
+func (cfg *Config) setDefault() {
+	cfg.Build = "develop"
+	cfg.Routes = "all"
+	cfg.Desc = "Service Project"
 }

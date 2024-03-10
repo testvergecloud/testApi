@@ -11,6 +11,7 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/core/crud/user/stores/userdb"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -47,12 +48,12 @@ type KeyLookup interface {
 }
 
 // Config represents information required to initialize auth.
-type Config struct {
-	Log       *logger.Logger
-	DB        *sqlx.DB
-	KeyLookup KeyLookup
-	Issuer    string
-}
+// type Config struct {
+// 	Log       *logger.Logger
+// 	DB        *sqlx.DB
+// 	KeyLookup KeyLookup
+// 	Issuer    string
+// }
 
 // Auth is used to authenticate clients. It can generate a token for a
 // set of user claims and recreate the claims by parsing the token.
@@ -65,20 +66,20 @@ type Auth struct {
 }
 
 // New creates an Auth to support authentication/authorization.
-func New(cfg Config) (*Auth, error) {
+func New(cfg *config.Config, db *sqlx.DB, kl KeyLookup, log *logger.Logger) (*Auth, error) {
 	// If a database connection is not provided, we won't perform the
 	// user enabled check.
 	var usrCore *user.Core
-	if cfg.DB != nil {
-		usrCore = user.NewCore(cfg.Log, nil, userdb.NewStore(cfg.Log, cfg.DB))
+	if db != nil {
+		usrCore = user.NewCore(log, nil, userdb.NewStore(log, db))
 	}
 
 	a := Auth{
-		keyLookup: cfg.KeyLookup,
+		keyLookup: kl,
 		usrCore:   usrCore,
 		method:    jwt.GetSigningMethod(jwt.SigningMethodRS256.Name),
 		parser:    jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Name})),
-		issuer:    cfg.Issuer,
+		issuer:    cfg.Auth.Issuer,
 	}
 
 	return &a, nil

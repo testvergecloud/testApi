@@ -46,13 +46,13 @@ func GenToken(log *logger.Logger, cfg *config.Config, keyPath string, userID uui
 		return fmt.Errorf("reading keys: %w", err)
 	}
 
-	authCfg := auth.Config{
-		Log:       log,
-		DB:        db,
-		KeyLookup: ks,
-	}
+	// authCfg := auth.Config{
+	// 	Log:       log,
+	// 	DB:        db,
+	// 	KeyLookup: ks,
+	// }
 
-	a, err := auth.New(authCfg)
+	a, err := auth.New(cfg, db, ks, log)
 	if err != nil {
 		return fmt.Errorf("constructing auth: %w", err)
 	}

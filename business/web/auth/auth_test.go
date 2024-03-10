@@ -10,6 +10,7 @@ import (
 
 	"github.com/testvergecloud/testApi/business/core/crud/user"
 	"github.com/testvergecloud/testApi/business/web/auth"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -27,13 +28,13 @@ func Test_Auth(t *testing.T) {
 		teardown()
 	}()
 
-	cfg := auth.Config{
-		Log:       log,
-		DB:        db,
-		KeyLookup: &keyStore{},
-		Issuer:    "service project",
+	cfg := &config.Config{
+		Auth: &config.Auth{
+			Issuer: "service project",
+		},
 	}
-	a, err := auth.New(cfg)
+
+	a, err := auth.New(cfg, db, &keyStore{}, log)
 	if err != nil {
 		t.Fatalf("Should be able to create an authenticator: %s", err)
 	}
