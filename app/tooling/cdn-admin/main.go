@@ -118,7 +118,7 @@ func run(cfg *config.Config, log *logger.Logger) {
 }
 
 func loadConfig(log *logger.Logger) (*config.Config, error) {
-	c, err := config.LoadConfig("./foundation/env/cdn/")
+	c, err := config.LoadConfig("./foundation/env/cdn/", "db", "auth")
 	if err != nil {
 		return nil, err
 	}

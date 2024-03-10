@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/testvergecloud/testApi/app/services/cdn-api/build/all"
 	"github.com/testvergecloud/testApi/app/services/cdn-api/build/crud"
 	"github.com/testvergecloud/testApi/app/services/cdn-api/build/reporting"
@@ -44,23 +45,39 @@ var (
 )
 
 func main() {
-	ServerModule := fx.Options(
+	// ServerModule := fx.Options(
+	// 	fx.Provide(loadConfig),
+	// 	fx.Provide(initializeLogger),
+	// 	fx.Invoke(run),
+	// )
+	// app := fx.New(ServerModule).Start()Run()
+
+	// Define the module with options
+	app := fx.New(
+		fx.Provide(context.Background),
 		fx.Provide(loadConfig),
 		fx.Provide(initializeLogger),
-		fx.Invoke(run),
+		fx.Provide(startTracing),
+		fx.Provide(loadKeyStore),
+		fx.Provide(sqldb.Open),
+		fx.Provide(auth.New),
+		fx.Invoke(run), // Run the application logic
+		// fx.Logger(log.New(os.Stdout, "", 0)), // Use a logger provided by Uber FX
 	)
-	fx.New(ServerModule).Run()
 
-	// -------------------------------------------------------------------------
-	// log := InitializeLogger()
+	// Start the application
+	if err := app.Start(context.Background()); err != nil {
+		fmt.Printf("Error starting application: %v", err)
+	}
 
-	// if err := run(ctx, log); err != nil {
-	// 	log.Error(ctx, "startup", "msg", err)
-	// 	os.Exit(1)
-	// }
+	// Wait for the application to stop
+	<-app.Done()
+
+	// Application has stopped, exit with success status code
+	os.Exit(0)
 }
 
-func run(cfg *config.Config, log *logger.Logger) {
+func run(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerProvider, a *auth.Auth) {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
 	ctx := context.Background()
@@ -79,11 +96,11 @@ func run(cfg *config.Config, log *logger.Logger) {
 
 	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.HostPort)
 
-	db, err := sqldb.Open(cfg)
-	if err != nil {
-		log.Error(ctx, "connecting to db: ", err)
-		return
-	}
+	// db, err := sqldb.Open(cfg)
+	// if err != nil {
+	// 	log.Error(ctx, "connecting to db: ", err)
+	// 	return
+	// }
 	defer func() {
 		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.HostPort)
 		db.Close()
@@ -97,41 +114,41 @@ func run(cfg *config.Config, log *logger.Logger) {
 	// Load the private keys files from disk. We can assume some system like
 	// Vault has created these files already. How that happens is not our
 	// concern.
-	ks := keystore.New()
-	if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
-		log.Error(ctx, "reading keys: ", err)
-		return
-	}
+	// ks := keystore.New()
+	// if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
+	// 	log.Error(ctx, "reading keys: ", err)
+	// 	return
+	// }
 
-	authCfg := auth.Config{
-		Log:       log,
-		DB:        db,
-		KeyLookup: ks,
-	}
+	// authCfg := auth.Config{
+	// 	Log:       log,
+	// 	DB:        db,
+	// 	KeyLookup: ks,
+	// }
 
-	auth, err := auth.New(authCfg)
-	if err != nil {
-		log.Error(ctx, "constructing auth: ", err)
-		return
-	}
+	// auth, err := auth.New(authCfg)
+	// if err != nil {
+	// 	log.Error(ctx, "constructing auth: ", err)
+	// 	return
+	// }
 
 	// -------------------------------------------------------------------------
 	// Start Tracing Support
 
 	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
 
-	traceProvider, err := startTracing(
-		cfg.ServiceName,
-		cfg.ReporterURI,
-		cfg.Probability,
-	)
-	if err != nil {
-		log.Error(ctx, "starting tracing: ", err)
-		return
-	}
-	defer traceProvider.Shutdown(context.Background())
+	// traceProvider, err := startTracing(
+	// 	cfg.ServiceName,
+	// 	cfg.ReporterURI,
+	// 	cfg.Probability,
+	// )
+	// if err != nil {
+	// 	log.Error(ctx, "starting tracing: ", err)
+	// 	return
+	// }
+	defer tp.Shutdown(context.Background())
 
-	tracer := traceProvider.Tracer("service")
+	tracer := tp.Tracer("service")
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service
@@ -150,14 +167,13 @@ func run(cfg *config.Config, log *logger.Logger) {
 	log.Info(ctx, "startup", "status", "initializing V1 API support")
 
 	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	cfgMux := mux.Config{
 		Build:    build,
 		Shutdown: shutdown,
 		Log:      log,
 		Delegate: delegate.New(log),
-		Auth:     auth,
+		Auth:     a,
 		DB:       db,
 		Tracer:   tracer,
 	}
@@ -165,9 +181,9 @@ func run(cfg *config.Config, log *logger.Logger) {
 	api := http.Server{
 		Addr:         cfg.APIHost,
 		Handler:      mux.WebAPI(cfgMux, buildRoutes(), mux.WithCORS(cfg.CORSAllowedOrigins)),
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-		IdleTimeout:  cfg.IdleTimeout,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
 		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
 	}
 
@@ -179,8 +195,13 @@ func run(cfg *config.Config, log *logger.Logger) {
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	// -------------------------------------------------------------------------
-	// Shutdown
+	// Handle graceful shutdown
+	handleShutdown(&api, log, ctx, cfg.Web.ShutdownTimeout, shutdown, serverErrors)
+}
+
+// Handle graceful shutdown
+func handleShutdown(api *http.Server, log *logger.Logger, ctx context.Context, t time.Duration, shutdown chan os.Signal, serverErrors chan error) {
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
 	case err := <-serverErrors:
@@ -190,7 +211,7 @@ func run(cfg *config.Config, log *logger.Logger) {
 		log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
 		defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
 
-		ctx, cancel := context.WithTimeout(ctx, cfg.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, t)
 		defer cancel()
 
 		if err := api.Shutdown(ctx); err != nil {
@@ -199,8 +220,6 @@ func run(cfg *config.Config, log *logger.Logger) {
 			return
 		}
 	}
-
-	return
 }
 
 func buildRoutes() mux.RouteAdder {
@@ -227,7 +246,7 @@ func buildRoutes() mux.RouteAdder {
 }
 
 // startTracing configure open telemetry to be used with Grafana Tempo.
-func startTracing(serviceName string, reporterURI string, probability float64) (*trace.TracerProvider, error) {
+func startTracing(cfg *config.Config) (*trace.TracerProvider, error) {
 	// WARNING: The current settings are using defaults which may not be
 	// compatible with your project. Please review the documentation for
 	// opentelemetry.
@@ -236,7 +255,7 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 		context.Background(),
 		otlptracegrpc.NewClient(
 			otlptracegrpc.WithInsecure(), // This should be configurable
-			otlptracegrpc.WithEndpoint(reporterURI),
+			otlptracegrpc.WithEndpoint(cfg.ReporterURI),
 		),
 	)
 	if err != nil {
@@ -244,7 +263,7 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 	}
 
 	traceProvider := trace.NewTracerProvider(
-		trace.WithSampler(trace.TraceIDRatioBased(probability)),
+		trace.WithSampler(trace.TraceIDRatioBased(cfg.Probability)),
 		trace.WithBatcher(exporter,
 			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
 			trace.WithBatchTimeout(trace.DefaultScheduleDelay*time.Millisecond),
@@ -253,7 +272,7 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 		trace.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String(serviceName),
+				semconv.ServiceNameKey.String(cfg.ServiceName),
 			),
 		),
 	)
@@ -274,7 +293,7 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 }
 
 func loadConfig(log *logger.Logger) (*config.Config, error) {
-	c, err := config.LoadConfig("./foundation/env/api/")
+	c, err := config.LoadConfig("./foundation/env/cdn/", "web", "auth", "db", "tempo")
 	if err != nil {
 		return nil, err
 	}
@@ -298,4 +317,12 @@ func initializeLogger() *logger.Logger {
 
 	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "CDN-API", traceIDFn, events)
 	return log
+}
+
+func loadKeyStore(cfg *config.Config) (auth.KeyLookup, error) {
+	ks := keystore.New()
+	if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
+		return nil, fmt.Errorf("reading keys: %w", err)
+	}
+	return ks, nil
 }

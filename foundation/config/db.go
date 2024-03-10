@@ -15,10 +15,10 @@ type DB struct {
 	Schema       string `mapstructure:"CDN_DB_SCHEMA"`
 }
 
-func LoadDBConfig(path string, name string, t string) (*DB, error) {
+func LoadDBConfig(path string, name string, typeC string) (*DB, error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(name)
-	viper.SetConfigType(t)
+	viper.SetConfigType(typeC)
 
 	viper.AutomaticEnv()
 

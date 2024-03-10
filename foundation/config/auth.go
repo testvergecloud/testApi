@@ -7,14 +7,14 @@ import (
 type Auth struct {
 	KeysFolder string `mapstructure:"CDN_AUTH_KEYS_FOLDER"`
 	ActiveKID  string `mapstructure:"CDN_AUTH_ACTIVE_KID"`
-	DefaultKID string `mapstructure:"CDN_AUTO_DEFAULT_KID"`
-	Issuer     string `mapstructure:"CDN_AUTO_ISSUER"`
+	DefaultKID string `mapstructure:"CDN_AUTH_DEFAULT_KID"`
+	Issuer     string `mapstructure:"CDN_AUTH_ISSUER"`
 }
 
-func LoadAuthConfig(path string, name string, t string) (*Auth, error) {
+func LoadAuthConfig(path string, name string, typeC string) (*Auth, error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(name)
-	viper.SetConfigType(t)
+	viper.SetConfigType(typeC)
 
 	viper.AutomaticEnv()
 

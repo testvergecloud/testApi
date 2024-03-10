@@ -2,22 +2,21 @@ package main
 
 import (
 	"context"
-	"errors"
 	"expvar"
-	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
-	"time"
 
 	"github.com/testvergecloud/testApi/app/services/metrics/collector"
 	"github.com/testvergecloud/testApi/app/services/metrics/publisher"
 	expvarsrv "github.com/testvergecloud/testApi/app/services/metrics/publisher/expvar"
 	prometheussrv "github.com/testvergecloud/testApi/app/services/metrics/publisher/prometheus"
+	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
+	"go.uber.org/fx"
 
 	"github.com/ardanlabs/conf/v3"
 )
@@ -25,81 +24,24 @@ import (
 var build = "develop"
 
 func main() {
-	var log *logger.Logger
-
-	events := logger.Events{
-		Error: func(ctx context.Context, r logger.Record) { log.Info(ctx, "******* SEND ALERT ******") },
-	}
-
-	traceIDFn := func(ctx context.Context) string {
-		return "00000000-0000-0000-0000-000000000000"
-	}
-
-	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "METRICS", traceIDFn, events)
-
 	// -------------------------------------------------------------------------
-
-	ctx := context.Background()
-
-	if err := run(ctx, log); err != nil {
-		log.Error(ctx, "startup", "msg", err)
-		os.Exit(1)
-	}
+	ServerModule := fx.Options(
+		fx.Provide(loadConfig),
+		fx.Provide(initializeLogger),
+		fx.Invoke(run),
+	)
+	fx.New(ServerModule).Run()
+	// if err := run(ctx, log); err != nil {
+	// 	log.Error(ctx, "startup", "msg", err)
+	// 	os.Exit(1)
+	// }
 }
 
-func run(ctx context.Context, log *logger.Logger) error {
+func run(cfg *config.Config, log *logger.Logger) {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
-
+	ctx := context.Background()
 	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
-
-	// -------------------------------------------------------------------------
-	// Configuration
-
-	cfg := struct {
-		conf.Version
-		Web struct {
-			DebugHost string `conf:"default:0.0.0.0:4001"`
-		}
-		Expvar struct {
-			Host            string        `conf:"default:0.0.0.0:3001"`
-			Route           string        `conf:"default:/metrics"`
-			ReadTimeout     time.Duration `conf:"default:5s"`
-			WriteTimeout    time.Duration `conf:"default:10s"`
-			IdleTimeout     time.Duration `conf:"default:120s"`
-			ShutdownTimeout time.Duration `conf:"default:5s"`
-		}
-		Prometheus struct {
-			Host            string        `conf:"default:0.0.0.0:3002"`
-			Route           string        `conf:"default:/metrics"`
-			ReadTimeout     time.Duration `conf:"default:5s"`
-			WriteTimeout    time.Duration `conf:"default:10s"`
-			IdleTimeout     time.Duration `conf:"default:120s"`
-			ShutdownTimeout time.Duration `conf:"default:5s"`
-		}
-		Collect struct {
-			From string `conf:"default:http://localhost:4000/debug/vars"`
-		}
-		Publish struct {
-			To       string        `conf:"default:console"`
-			Interval time.Duration `conf:"default:5s"`
-		}
-	}{
-		Version: conf.Version{
-			Build: build,
-			Desc:  "copyright information here",
-		},
-	}
-
-	const prefix = "METRICS"
-	help, err := conf.Parse(prefix, &cfg)
-	if err != nil {
-		if errors.Is(err, conf.ErrHelpWanted) {
-			fmt.Println(help)
-			return nil
-		}
-		return fmt.Errorf("parsing config: %w", err)
-	}
 
 	// -------------------------------------------------------------------------
 	// App Starting
@@ -109,7 +51,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	out, err := conf.String(&cfg)
 	if err != nil {
-		return fmt.Errorf("generating config for output: %w", err)
+		log.Error(ctx, "generating config for output: ", err)
+		return
 	}
 	log.Info(ctx, "startup", "config", out)
 
@@ -149,14 +92,16 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	collector, err := collector.New(cfg.Collect.From)
 	if err != nil {
-		return fmt.Errorf("starting collector: %w", err)
+		log.Error(ctx, "starting collector: ", err)
+		return
 	}
 
 	stdout := publisher.NewStdout(log)
 
 	publish, err := publisher.New(log, collector, cfg.Publish.Interval, prom.Publish, exp.Publish, stdout.Publish)
 	if err != nil {
-		return fmt.Errorf("starting publisher: %w", err)
+		log.Error(ctx, "starting publisher: ", err)
+		return
 	}
 	defer publish.Stop()
 
@@ -169,6 +114,29 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	log.Info(ctx, "shutdown", "status", "shutdown started")
 	defer log.Info(ctx, "shutdown", "status", "shutdown complete")
+}
 
-	return nil
+func loadConfig(log *logger.Logger) (*config.Config, error) {
+	c, err := config.LoadConfig("./foundation/env/metrics/", "web", "expvar", "prometheus", "collect", "publish")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info(context.Background(), "config load successfully", "config: ", c)
+	return c, nil
+}
+
+func initializeLogger() *logger.Logger {
+	var log *logger.Logger
+
+	events := logger.Events{
+		Error: func(ctx context.Context, r logger.Record) { log.Info(ctx, "******* SEND ALERT ******") },
+	}
+
+	traceIDFn := func(ctx context.Context) string {
+		return "00000000-0000-0000-0000-000000000000"
+	}
+
+	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "METRICS", traceIDFn, events)
+	return log
 }
