@@ -17,20 +17,20 @@ import (
 )
 
 // Options represent optional parameters.
-type Options struct {
+type GinOptions struct {
 	corsOrigin []string
 }
 
 // WithCORS provides configuration options for CORS.
-func WithCORS(origins []string) func(opts *Options) {
+func GinWithCORS(origins []string) func(opts *Options) {
 	return func(opts *Options) {
 		opts.corsOrigin = origins
 	}
 }
 
 // Config contains all the mandatory systems required by handlers.
-type Config struct {
-	Build    string
+type GinConfig struct {
+	// Build    string
 	Shutdown chan os.Signal
 	Log      *logger.Logger
 	Delegate *delegate.Delegate
@@ -41,12 +41,12 @@ type Config struct {
 
 // RouteAdder defines behavior that sets the routes to bind for an instance
 // of the service.
-type RouteAdder interface {
+type GinRouteAdder interface {
 	Add(app *web.App, cfg Config)
 }
 
 // WebAPI constructs a http.Handler with all application routes bound.
-func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) http.Handler {
+func GinWebApi(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) http.Handler {
 	var opts Options
 	for _, option := range options {
 		option(&opts)
@@ -62,7 +62,7 @@ func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) h
 	)
 
 	if len(opts.corsOrigin) > 0 {
-		app.GinEnableCORS(mid.GinCors(opts.corsOrigin))
+		app.EnableCORS(mid.Cors(opts.corsOrigin))
 	}
 
 	routeAdder.Add(app, cfg)
