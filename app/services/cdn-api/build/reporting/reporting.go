@@ -10,22 +10,22 @@ import (
 
 // Routes constructs the add value which provides the implementation of
 // of RouteAdder for specifying what routes to bind to this instance.
-func Routes() add {
-	return add{}
+func Routes() Add {
+	return Add{}
 }
 
-type add struct{}
+type Add struct{}
 
 // Add implements the RouterAdder interface.
-func (add) Add(app *web.App, cfg mux.Config) {
+func (Add) Add(app *web.App, cfg mux.Config) {
 	checkgrp.Routes(app, checkgrp.Config{
-		Build: cfg.Build,
-		Log:   cfg.Log,
-		DB:    cfg.DB,
+		// Build: cfg.Build,
+		// Log: cfg.Log,
+		DB: cfg.DB,
 	})
 
 	vproductgrp.Routes(app, vproductgrp.Config{
-		Log:  cfg.Log,
+		// Log:  cfg.Log,
 		Auth: cfg.Auth,
 		DB:   cfg.DB,
 	})

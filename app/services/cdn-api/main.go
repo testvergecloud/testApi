@@ -45,16 +45,9 @@ var (
 )
 
 func main() {
-	// ServerModule := fx.Options(
-	// 	fx.Provide(loadConfig),
-	// 	fx.Provide(initializeLogger),
-	// 	fx.Invoke(run),
-	// )
-	// app := fx.New(ServerModule).Start()Run()
-
 	// Define the module with options
 	app := fx.New(
-		fx.Provide(context.Background),
+		fx.Provide(initializeContext),
 		fx.Provide(loadConfig),
 		fx.Provide(initializeLogger),
 		fx.Provide(startTracing),
@@ -77,10 +70,9 @@ func main() {
 	os.Exit(0)
 }
 
-func run(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerProvider, a *auth.Auth) {
+func run(cfg *config.Config, log *logger.Logger, ctx context.Context, db *sqlx.DB, tp *trace.TracerProvider, a *auth.Auth) {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
-	ctx := context.Background()
 	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
 	// -------------------------------------------------------------------------
@@ -91,61 +83,18 @@ func run(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerPr
 
 	expvar.NewString("build").Set(build)
 
-	// -------------------------------------------------------------------------
-	// Database Support
-
 	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.HostPort)
 
-	// db, err := sqldb.Open(cfg)
-	// if err != nil {
-	// 	log.Error(ctx, "connecting to db: ", err)
-	// 	return
-	// }
 	defer func() {
 		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.HostPort)
 		db.Close()
 	}()
 
 	// -------------------------------------------------------------------------
-	// Initialize authentication support
-
-	log.Info(ctx, "startup", "status", "initializing authentication support")
-
-	// Load the private keys files from disk. We can assume some system like
-	// Vault has created these files already. How that happens is not our
-	// concern.
-	// ks := keystore.New()
-	// if err := ks.LoadRSAKeys(os.DirFS(cfg.KeysFolder)); err != nil {
-	// 	log.Error(ctx, "reading keys: ", err)
-	// 	return
-	// }
-
-	// authCfg := auth.Config{
-	// 	Log:       log,
-	// 	DB:        db,
-	// 	KeyLookup: ks,
-	// }
-
-	// auth, err := auth.New(authCfg)
-	// if err != nil {
-	// 	log.Error(ctx, "constructing auth: ", err)
-	// 	return
-	// }
-
-	// -------------------------------------------------------------------------
 	// Start Tracing Support
 
 	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
 
-	// traceProvider, err := startTracing(
-	// 	cfg.ServiceName,
-	// 	cfg.ReporterURI,
-	// 	cfg.Probability,
-	// )
-	// if err != nil {
-	// 	log.Error(ctx, "starting tracing: ", err)
-	// 	return
-	// }
 	defer tp.Shutdown(context.Background())
 
 	tracer := tp.Tracer("service")
@@ -156,7 +105,7 @@ func run(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerPr
 	go func() {
 		log.Info(ctx, "startup", "status", "debug v1 router started", "host", cfg.DebugHost)
 
-		if err := http.ListenAndServe(cfg.DebugHost, debug.Mux()); err != nil {
+		if err := http.ListenAndServe(cfg.DebugHost, debug.GinMux()); err != nil {
 			log.Error(ctx, "shutdown", "status", "debug v1 router closed", "host", cfg.DebugHost, "msg", err)
 		}
 	}()
@@ -169,9 +118,9 @@ func run(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerPr
 	shutdown := make(chan os.Signal, 1)
 
 	cfgMux := mux.Config{
-		Build:    build,
+		// Build:    build,
 		Shutdown: shutdown,
-		Log:      log,
+		// Log:      log,
 		Delegate: delegate.New(log),
 		Auth:     a,
 		DB:       db,
@@ -246,10 +195,15 @@ func buildRoutes() mux.RouteAdder {
 }
 
 // startTracing configure open telemetry to be used with Grafana Tempo.
-func startTracing(cfg *config.Config) (*trace.TracerProvider, error) {
+func startTracing(cfg *config.Config, log *logger.Logger, ctx context.Context) (*trace.TracerProvider, error) {
 	// WARNING: The current settings are using defaults which may not be
 	// compatible with your project. Please review the documentation for
 	// opentelemetry.
+
+	// -------------------------------------------------------------------------
+	// Initialize authentication support
+
+	log.Info(ctx, "startup", "status", "initializing authentication support")
 
 	exporter, err := otlptrace.New(
 		context.Background(),
@@ -292,13 +246,13 @@ func startTracing(cfg *config.Config) (*trace.TracerProvider, error) {
 	return traceProvider, nil
 }
 
-func loadConfig(log *logger.Logger) (*config.Config, error) {
+func loadConfig(log *logger.Logger, ctx context.Context) (*config.Config, error) {
 	c, err := config.LoadConfig("./foundation/env/cdn/", "web", "auth", "db", "tempo")
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info(context.Background(), "config load successfully", "config: ", c)
+	log.Info(ctx, "config load successfully", "config: ", c)
 	return c, nil
 }
 
@@ -325,4 +279,8 @@ func loadKeyStore(cfg *config.Config) (auth.KeyLookup, error) {
 		return nil, fmt.Errorf("reading keys: %w", err)
 	}
 	return ks, nil
+}
+
+func initializeContext() context.Context {
+	return context.Background()
 }

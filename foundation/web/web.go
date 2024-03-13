@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -26,7 +27,8 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 // object for each of our http handlers. Feel free to add any configuration
 // data/logic on this App struct.
 type App struct {
-	mux      *http.ServeMux
+	// mux      *http.ServeMux
+	mux      *gin.Engine
 	otmux    http.Handler
 	shutdown chan os.Signal
 	mw       []MidHandler
@@ -35,7 +37,6 @@ type App struct {
 
 // NewApp creates an App value that handle a set of routes for the application.
 func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...MidHandler) *App {
-
 	// Create an OpenTelemetry HTTP Handler which wraps our router. This will start
 	// the initial span and annotate it with information about the request/trusted.
 	//
@@ -43,7 +44,17 @@ func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...MidHandler) *App
 	// parent if a client request includes the appropriate headers.
 	// https://w3c.github.io/trace-context/
 
-	mux := http.NewServeMux()
+	// mux := http.NewServeMux()
+
+	// return &App{
+	// 	mux:      mux,
+	// 	otmux:    otelhttp.NewHandler(mux, "request"),
+	// 	shutdown: shutdown,
+	// 	mw:       mw,
+	// 	tracer:   tracer,
+	// }
+
+	mux := gin.New()
 
 	return &App{
 		mux:      mux,
@@ -71,6 +82,35 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // EnableCORS enables CORS preflight requests to work in the middleware. It
 // prevents the MethodNotAllowedHandler from being called. This must be enabled
 // for the CORS middleware to work.
+// func (a *App) EnableCORS(mw MidHandler) {
+// 	a.mw = append(a.mw, mw)
+
+// 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// 		return Respond(ctx, w, "OK", http.StatusOK)
+// 	}
+// 	handler = wrapMiddleware(a.mw, handler)
+
+// 	h := func(w http.ResponseWriter, r *http.Request) {
+// 		ctx, span := a.startSpan(w, r)
+// 		defer span.End()
+
+// 		v := Values{
+// 			TraceID: span.SpanContext().TraceID().String(),
+// 			Tracer:  a.tracer,
+// 			Now:     time.Now().UTC(),
+// 		}
+// 		ctx = setValues(ctx, &v)
+
+// 		handler(ctx, w, r)
+// 	}
+
+// 	// a.mux.HandleFunc("OPTIONS /", h)
+// 	a.mux.GET("OPTIONS /", gin.WrapF(h))
+// }
+
+// EnableCORS enables CORS preflight requests to work in the middleware. It
+// prevents the MethodNotAllowedHandler from being called. This must be enabled
+// for the CORS middleware to work.
 func (a *App) EnableCORS(mw MidHandler) {
 	a.mw = append(a.mw, mw)
 
@@ -93,7 +133,36 @@ func (a *App) EnableCORS(mw MidHandler) {
 		handler(ctx, w, r)
 	}
 
-	a.mux.HandleFunc("OPTIONS /", h)
+	// a.mux.HandleFunc("OPTIONS /", h)
+	a.mux.GET("OPTIONS /", gin.WrapF(h))
+}
+
+func (a *App) GinEnableCORS(cors gin.HandlerFunc) {
+	// Apply CORS middleware directly to the Gin router
+	a.mux.Use(cors)
+
+	// Register a handler for OPTIONS requests to handle preflight CORS requests
+	a.mux.OPTIONS("/", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	// Register tracing middleware
+	a.mux.Use(a.GinHandle)
+}
+
+func (a *App) errorHandlerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		for _, err := range c.Errors {
+			if validateError(err) {
+				// Handle the error if it's not one of the ignored types
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+		a.SignalShutdown()
+	}
 }
 
 // HandleNoMiddleware sets a handler function for a given HTTP method and path pair
@@ -122,7 +191,8 @@ func (a *App) HandleNoMiddleware(method string, group string, path string, handl
 	}
 	finalPath = fmt.Sprintf("%s %s", method, finalPath)
 
-	a.mux.HandleFunc(finalPath, h)
+	// a.mux.HandleFunc(finalPath, h)
+	a.ginHandler(method, finalPath, h)
 }
 
 // Handle sets a handler function for a given HTTP method and path pair
@@ -156,7 +226,22 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 	}
 	finalPath = fmt.Sprintf("%s %s", method, finalPath)
 
-	a.mux.HandleFunc(finalPath, h)
+	// a.mux.HandleFunc(finalPath, h)
+	a.ginHandler(method, finalPath, h)
+}
+
+func (a *App) GinHandle(c *gin.Context) {
+	ctx, span := a.startSpan(c.Writer, c.Request)
+	defer span.End()
+
+	v := Values{
+		TraceID: span.SpanContext().TraceID().String(),
+		Tracer:  a.tracer,
+		Now:     time.Now().UTC(),
+	}
+
+	ctx = setValues(ctx, &v)
+	c.Request = c.Request.WithContext(ctx)
 }
 
 // startSpan initializes the request by adding a span and writing otel
@@ -184,7 +269,6 @@ func (a *App) startSpan(w http.ResponseWriter, r *http.Request) (context.Context
 // validateError validates the error for special conditions that do not
 // warrant an actual shutdown by the system.
 func validateError(err error) bool {
-
 	// Ignore syscall.EPIPE and syscall.ECONNRESET errors which occurs
 	// when a write operation happens on the http.ResponseWriter that
 	// has simultaneously been disconnected by the client (TCP
@@ -219,4 +303,23 @@ func validateError(err error) bool {
 	}
 
 	return true
+}
+
+func (a *App) ginHandler(method string, path string, f http.HandlerFunc) {
+	switch method {
+	case http.MethodGet:
+		a.mux.GET(path, gin.WrapF(f))
+	case http.MethodPost:
+		a.mux.POST(path, gin.WrapF(f))
+	case http.MethodPut:
+		a.mux.PUT(path, gin.WrapF(f))
+	case http.MethodPatch:
+		a.mux.PATCH(path, gin.WrapF(f))
+	case http.MethodDelete:
+		a.mux.DELETE(path, gin.WrapF(f))
+	case http.MethodHead:
+		a.mux.HEAD(path, gin.WrapF(f))
+	case http.MethodOptions:
+		a.mux.OPTIONS(path, gin.WrapF(f))
+	}
 }

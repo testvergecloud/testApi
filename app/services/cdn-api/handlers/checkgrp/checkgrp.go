@@ -73,8 +73,8 @@ func (h *handlers) liveness(ctx context.Context, w http.ResponseWriter, r *http.
 		Namespace  string `json:"namespace,omitempty"`
 		GOMAXPROCS int    `json:"GOMAXPROCS,omitempty"`
 	}{
-		Status:     "up",
-		Build:      h.build,
+		Status: "up",
+		// Build:      h.build,
 		Host:       host,
 		Name:       os.Getenv("KUBERNETES_NAME"),
 		PodIP:      os.Getenv("KUBERNETES_POD_IP"),

@@ -25,7 +25,7 @@ func Test_User(t *testing.T) {
 	app := appTest{
 		Handler: mux.WebAPI(mux.Config{
 			Shutdown: make(chan os.Signal, 1),
-			Log:      dbTest.Log,
+			// Log:      dbTest.Log,
 			Delegate: dbTest.CoreAPIs.Delegate,
 			Auth:     dbTest.V1.Auth,
 			DB:       dbTest.DB,

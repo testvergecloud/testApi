@@ -3,7 +3,10 @@ package mid
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/foundation/web"
 )
 
@@ -26,4 +29,14 @@ func Cors(origins []string) web.MidHandler {
 	}
 
 	return m
+}
+
+func GinCors(origins []string) gin.HandlerFunc {
+	return cors.New(cors.Config{
+		AllowOrigins:     origins,
+		AllowMethods:     []string{"POST", "GET", "OPTIONS", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		MaxAge:           86400 * time.Second,
+		AllowCredentials: true,
+	})
 }
