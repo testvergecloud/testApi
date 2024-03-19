@@ -21,7 +21,10 @@ import (
 
 // A Handler is a type that handles a http request within our own little mini
 // framework.
-type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
+type (
+	Handler    func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
+	GinHandler func(ctx context.Context, c *gin.Context) error
+)
 
 // App is the entrypoint into our application and what configures our context
 // object for each of our http handlers. Feel free to add any configuration
@@ -43,16 +46,6 @@ func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...MidHandler) *App
 	// This is configured to use the W3C TraceContext standard to set the remote
 	// parent if a client request includes the appropriate headers.
 	// https://w3c.github.io/trace-context/
-
-	// mux := http.NewServeMux()
-
-	// return &App{
-	// 	mux:      mux,
-	// 	otmux:    otelhttp.NewHandler(mux, "request"),
-	// 	shutdown: shutdown,
-	// 	mw:       mw,
-	// 	tracer:   tracer,
-	// }
 
 	mux := gin.New()
 
@@ -78,35 +71,6 @@ func (a *App) SignalShutdown() {
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.otmux.ServeHTTP(w, r)
 }
-
-// EnableCORS enables CORS preflight requests to work in the middleware. It
-// prevents the MethodNotAllowedHandler from being called. This must be enabled
-// for the CORS middleware to work.
-// func (a *App) EnableCORS(mw MidHandler) {
-// 	a.mw = append(a.mw, mw)
-
-// 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-// 		return Respond(ctx, w, "OK", http.StatusOK)
-// 	}
-// 	handler = wrapMiddleware(a.mw, handler)
-
-// 	h := func(w http.ResponseWriter, r *http.Request) {
-// 		ctx, span := a.startSpan(w, r)
-// 		defer span.End()
-
-// 		v := Values{
-// 			TraceID: span.SpanContext().TraceID().String(),
-// 			Tracer:  a.tracer,
-// 			Now:     time.Now().UTC(),
-// 		}
-// 		ctx = setValues(ctx, &v)
-
-// 		handler(ctx, w, r)
-// 	}
-
-// 	// a.mux.HandleFunc("OPTIONS /", h)
-// 	a.mux.GET("OPTIONS /", gin.WrapF(h))
-// }
 
 // EnableCORS enables CORS preflight requests to work in the middleware. It
 // prevents the MethodNotAllowedHandler from being called. This must be enabled
@@ -147,22 +111,7 @@ func (a *App) GinEnableCORS(cors gin.HandlerFunc) {
 	})
 
 	// Register tracing middleware
-	a.mux.Use(a.GinHandle)
-}
-
-func (a *App) errorHandlerMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-
-		for _, err := range c.Errors {
-			if validateError(err) {
-				// Handle the error if it's not one of the ignored types
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-		a.SignalShutdown()
-	}
+	a.mux.Use(a.GinTrace)
 }
 
 // HandleNoMiddleware sets a handler function for a given HTTP method and path pair
@@ -178,6 +127,33 @@ func (a *App) HandleNoMiddleware(method string, group string, path string, handl
 		ctx := setValues(r.Context(), &v)
 
 		if err := handler(ctx, w, r); err != nil {
+			if validateError(err) {
+				a.SignalShutdown()
+				return
+			}
+		}
+	}
+
+	finalPath := path
+	if group != "" {
+		finalPath = "/" + group + path
+	}
+	finalPath = fmt.Sprintf("%s %s", method, finalPath)
+
+	// a.mux.HandleFunc(finalPath, h)
+	a.ginHandler(method, finalPath, gin.WrapF(h))
+}
+
+func (a *App) GinHandleNoMiddleware(method string, group string, path string, handler GinHandler) {
+	h := func(c *gin.Context) {
+		v := Values{
+			TraceID: uuid.NewString(),
+			Tracer:  nil,
+			Now:     time.Now().UTC(),
+		}
+		ctx := setValues(c, &v)
+
+		if err := handler(ctx, c); err != nil {
 			if validateError(err) {
 				a.SignalShutdown()
 				return
@@ -227,10 +203,38 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 	finalPath = fmt.Sprintf("%s %s", method, finalPath)
 
 	// a.mux.HandleFunc(finalPath, h)
+	a.ginHandler(method, finalPath, gin.WrapF(h))
+}
+
+func (a *App) GinHandle(method string, group string, path string, handler GinHandler) {
+	h := func(c *gin.Context) {
+		ctx, span := a.ginStartSpan(c)
+		defer span.End()
+
+		v := Values{
+			TraceID: span.SpanContext().TraceID().String(),
+			Tracer:  a.tracer,
+			Now:     time.Now().UTC(),
+		}
+		ctx = setValues(ctx, &v)
+
+		if err := handler(ctx, c); err != nil {
+			if validateError(err) {
+				a.SignalShutdown()
+				return
+			}
+		}
+	}
+
+	finalPath := path
+	if group != "" {
+		finalPath = "/" + group + path
+	}
+
 	a.ginHandler(method, finalPath, h)
 }
 
-func (a *App) GinHandle(c *gin.Context) {
+func (a *App) GinTrace(c *gin.Context) {
 	ctx, span := a.startSpan(c.Writer, c.Request)
 	defer span.End()
 
@@ -262,6 +266,26 @@ func (a *App) startSpan(w http.ResponseWriter, r *http.Request) (context.Context
 
 	// Inject the trace information into the trusted.
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(w.Header()))
+
+	return ctx, span
+}
+
+func (a *App) ginStartSpan(c *gin.Context) (context.Context, trace.Span) {
+	ctx := c.Request.Context()
+
+	// There are times when the handler is called without a tracer, such
+	// as with tests. We need a span for the trace id.
+	span := trace.SpanFromContext(ctx)
+
+	// If a tracer exists, then replace the span for the one currently
+	// found in the context. This may have come from over the wire.
+	if a.tracer != nil {
+		ctx, span = a.tracer.Start(ctx, "pkg.web.handle")
+		span.SetAttributes(attribute.String("endpoint", c.Request.RequestURI))
+	}
+
+	// Inject the trace information into the trusted.
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(c.Writer.Header()))
 
 	return ctx, span
 }
@@ -305,21 +329,21 @@ func validateError(err error) bool {
 	return true
 }
 
-func (a *App) ginHandler(method string, path string, f http.HandlerFunc) {
+func (a *App) ginHandler(method string, path string, f gin.HandlerFunc) {
 	switch method {
 	case http.MethodGet:
-		a.mux.GET(path, gin.WrapF(f))
+		a.mux.GET(path, f)
 	case http.MethodPost:
-		a.mux.POST(path, gin.WrapF(f))
+		a.mux.POST(path, f)
 	case http.MethodPut:
-		a.mux.PUT(path, gin.WrapF(f))
+		a.mux.PUT(path, f)
 	case http.MethodPatch:
-		a.mux.PATCH(path, gin.WrapF(f))
+		a.mux.PATCH(path, f)
 	case http.MethodDelete:
-		a.mux.DELETE(path, gin.WrapF(f))
+		a.mux.DELETE(path, f)
 	case http.MethodHead:
-		a.mux.HEAD(path, gin.WrapF(f))
+		a.mux.HEAD(path, f)
 	case http.MethodOptions:
-		a.mux.OPTIONS(path, gin.WrapF(f))
+		a.mux.OPTIONS(path, f)
 	}
 }
