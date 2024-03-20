@@ -18,10 +18,13 @@ type Config struct {
 
 // Routes adds specific routes for this group.
 func Routes(app *web.App, cfg Config) {
-	const version = "v1"
+	const version = "/v1"
 
-	// hdl := new(cfg.Build, cfg.Log, cfg.DB)
-	hdl := new("", cfg.Log, cfg.DB)
-	app.HandleNoMiddleware(http.MethodGet, version, "/readiness", hdl.readiness)
-	app.HandleNoMiddleware(http.MethodGet, version, "/liveness", hdl.liveness)
+	v1 := app.Mux.Group(version)
+	{
+		// hdl := new(cfg.Build, cfg.Log, cfg.DB)
+		hdl := new("", cfg.Log, cfg.DB)
+		app.GinHandleNoMiddleware(http.MethodGet, v1, "/readiness", hdl.ginReadiness)
+		app.GinHandleNoMiddleware(http.MethodGet, v1, "/liveness", hdl.ginLiveness)
+	}
 }
