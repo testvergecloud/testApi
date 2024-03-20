@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/core/crud/home"
 	wb "github.com/testvergecloud/testApi/business/web"
 	"github.com/testvergecloud/testApi/business/web/mid"
@@ -115,4 +116,103 @@ func (h *handlers) query(ctx context.Context, w http.ResponseWriter, r *http.Req
 // queryByID returns a home by its ID.
 func (h *handlers) queryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	return wf.Respond(ctx, w, toAppHome(mid.GetHome(ctx)), http.StatusOK)
+}
+
+// create adds a new home to the system.
+func (h *handlers) ginCreate(c *gin.Context) error {
+	var app AppNewHome
+	if err := c.ShouldBindJSON(&app); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	nh, err := toCoreNewHome(c, app)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	hme, err := h.home.Create(c, nh)
+	if err != nil {
+		return fmt.Errorf("create: hme[%+v]: %w", app, err)
+	}
+
+	c.JSON(http.StatusCreated, toAppHome(hme))
+	return nil
+}
+
+// update updates a home in the system.
+func (h *handlers) ginUpdate(c *gin.Context) error {
+	var app AppUpdateHome
+	if err := c.ShouldBindJSON(&app); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	uh, err := toCoreUpdateHome(app)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	hme := mid.GetHome(c)
+
+	updHme, err := h.home.Update(c, hme, uh)
+	if err != nil {
+		return fmt.Errorf("update: homeID[%s] app[%+v]: %w", hme.ID, app, err)
+	}
+
+	c.JSON(http.StatusOK, toAppHome(updHme))
+	return nil
+}
+
+func (h *handlers) ginDelete(c *gin.Context) error {
+	hme := mid.GetHome(c)
+
+	if err := h.home.Delete(c, hme); err != nil {
+		return fmt.Errorf("delete: homeID[%s]: %w", hme.ID, err)
+	}
+
+	c.JSON(http.StatusNoContent, nil)
+	return nil
+}
+
+// query returns a list of homes with paging.
+func (h *handlers) ginQuery(c *gin.Context) error {
+	page, err := page.Parse(c.Request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	filter, err := parseFilter(c.Request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	orderBy, err := parseOrder(c.Request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
+	}
+
+	homes, err := h.home.Query(c, filter, orderBy, page.Number, page.RowsPerPage)
+	if err != nil {
+		return fmt.Errorf("query: %w", err)
+	}
+
+	total, err := h.home.Count(c, filter)
+	if err != nil {
+		return fmt.Errorf("count: %w", err)
+	}
+
+	c.JSON(http.StatusOK, wb.NewPageDocument(toAppHomes(homes), total, page.Number, page.RowsPerPage))
+	return nil
+}
+
+// queryByID returns a home by its ID.
+func (h *handlers) ginQueryByID(c *gin.Context) error {
+	c.JSON(http.StatusOK, toAppHome(mid.GetHome(c)))
+	return nil
 }

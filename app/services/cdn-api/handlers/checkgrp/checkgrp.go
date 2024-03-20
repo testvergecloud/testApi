@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/data/sqldb"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"github.com/testvergecloud/testApi/foundation/web"
@@ -86,4 +87,47 @@ func (h *handlers) liveness(ctx context.Context, w http.ResponseWriter, r *http.
 	// This handler provides a free timer loop.
 
 	return web.Respond(ctx, w, data, http.StatusOK)
+}
+
+func (h *handlers) ginReadiness(c *gin.Context) error {
+	status := "ok"
+	statusCode := http.StatusOK
+	if err := sqldb.StatusCheck(c, h.db); err != nil {
+		status = "db not ready"
+		statusCode = http.StatusInternalServerError
+		h.log.Info(c, "readiness failure", "status", status)
+		return c.AbortWithError(statusCode, err)
+	}
+
+	data := struct {
+		Status string `json:"status"`
+	}{
+		Status: status,
+	}
+
+	c.JSON(statusCode, data)
+
+	return nil
+}
+
+func (h *handlers) ginLiveness(c *gin.Context) error {
+	host, err := os.Hostname()
+	if err != nil {
+		host = "unavailable"
+	}
+
+	data := gin.H{
+		"status":     "up",
+		"build":      "", // You can set this if needed.
+		"host":       host,
+		"name":       os.Getenv("KUBERNETES_NAME"),
+		"podIP":      os.Getenv("KUBERNETES_POD_IP"),
+		"node":       os.Getenv("KUBERNETES_NODE_NAME"),
+		"namespace":  os.Getenv("KUBERNETES_NAMESPACE"),
+		"GOMAXPROCS": runtime.GOMAXPROCS(0),
+	}
+
+	c.JSON(http.StatusOK, data)
+
+	return nil
 }
