@@ -126,13 +126,14 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 		return err
 	}
 
-	nh, err := toCoreNewHome(c, app)
+	ctx := c.Request.Context()
+	nh, err := toCoreNewHome(ctx, app)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return err
 	}
 
-	hme, err := h.home.Create(c, nh)
+	hme, err := h.home.Create(ctx, nh)
 	if err != nil {
 		return fmt.Errorf("create: hme[%+v]: %w", app, err)
 	}
@@ -155,9 +156,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 		return err
 	}
 
-	hme := mid.GetHome(c)
+	ctx := c.Request.Context()
+	hme := mid.GetHome(ctx)
 
-	updHme, err := h.home.Update(c, hme, uh)
+	updHme, err := h.home.Update(ctx, hme, uh)
 	if err != nil {
 		return fmt.Errorf("update: homeID[%s] app[%+v]: %w", hme.ID, app, err)
 	}
@@ -167,9 +169,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 }
 
 func (h *handlers) ginDelete(c *gin.Context) error {
-	hme := mid.GetHome(c)
+	ctx := c.Request.Context()
+	hme := mid.GetHome(ctx)
 
-	if err := h.home.Delete(c, hme); err != nil {
+	if err := h.home.Delete(ctx, hme); err != nil {
 		return fmt.Errorf("delete: homeID[%s]: %w", hme.ID, err)
 	}
 
@@ -197,12 +200,13 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 		return err
 	}
 
-	homes, err := h.home.Query(c, filter, orderBy, page.Number, page.RowsPerPage)
+	ctx := c.Request.Context()
+	homes, err := h.home.Query(ctx, filter, orderBy, page.Number, page.RowsPerPage)
 	if err != nil {
 		return fmt.Errorf("query: %w", err)
 	}
 
-	total, err := h.home.Count(c, filter)
+	total, err := h.home.Count(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("count: %w", err)
 	}
@@ -213,6 +217,6 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 
 // queryByID returns a home by its ID.
 func (h *handlers) ginQueryByID(c *gin.Context) error {
-	c.JSON(http.StatusOK, toAppHome(mid.GetHome(c)))
+	c.JSON(http.StatusOK, toAppHome(mid.GetHome(c.Request.Context())))
 	return nil
 }
