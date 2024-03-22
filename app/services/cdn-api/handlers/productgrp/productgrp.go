@@ -119,7 +119,8 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 		return err
 	}
 
-	prd, err := h.product.Create(c, toCoreNewProduct(c, app))
+	ctx := c.Request.Context()
+	prd, err := h.product.Create(ctx, toCoreNewProduct(ctx, app))
 	if err != nil {
 		return fmt.Errorf("create: app[%+v]: %w", app, err)
 	}
@@ -136,9 +137,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 		return err
 	}
 
-	prd := mid.GetProduct(c)
+	ctx := c.Request.Context()
+	prd := mid.GetProduct(ctx)
 
-	updPrd, err := h.product.Update(c, prd, toCoreUpdateProduct(app))
+	updPrd, err := h.product.Update(ctx, prd, toCoreUpdateProduct(app))
 	if err != nil {
 		return fmt.Errorf("update: productID[%s] app[%+v]: %w", prd.ID, app, err)
 	}
@@ -149,9 +151,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 
 // delete removes a product from the system.
 func (h *handlers) ginDelete(c *gin.Context) error {
-	prd := mid.GetProduct(c)
+	ctx := c.Request.Context()
+	prd := mid.GetProduct(ctx)
 
-	if err := h.product.Delete(c, prd); err != nil {
+	if err := h.product.Delete(ctx, prd); err != nil {
 		return fmt.Errorf("delete: productID[%s]: %w", prd.ID, err)
 	}
 
@@ -179,12 +182,13 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 		return err
 	}
 
-	prds, err := h.product.Query(c, filter, orderBy, page.Number, page.RowsPerPage)
+	ctx := c.Request.Context()
+	prds, err := h.product.Query(ctx, filter, orderBy, page.Number, page.RowsPerPage)
 	if err != nil {
 		return fmt.Errorf("query: %w", err)
 	}
 
-	total, err := h.product.Count(c, filter)
+	total, err := h.product.Count(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("count: %w", err)
 	}
@@ -195,6 +199,6 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 
 // queryByID returns a product by its ID.
 func (h *handlers) ginQueryByID(c *gin.Context) error {
-	c.JSON(http.StatusOK, toAppProduct(mid.GetProduct(c)))
+	c.JSON(http.StatusOK, toAppProduct(mid.GetProduct(c.Request.Context())))
 	return nil
 }

@@ -185,7 +185,7 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 		return err
 	}
 
-	usr, err := h.user.Create(c, nc)
+	usr, err := h.user.Create(c.Request.Context(), nc)
 	if err != nil {
 		if errors.Is(err, user.ErrUniqueEmail) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -212,9 +212,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 		return err
 	}
 
-	usr := mid.GetUser(c)
+	ctx := c.Request.Context()
+	usr := mid.GetUser(ctx)
 
-	updUsr, err := h.user.Update(c, usr, uu)
+	updUsr, err := h.user.Update(ctx, usr, uu)
 	if err != nil {
 		return fmt.Errorf("update: userID[%s] uu[%+v]: %w", usr.ID, uu, err)
 	}
@@ -225,9 +226,10 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 
 // delete removes a user from the system.
 func (h *handlers) ginDelete(c *gin.Context) error {
-	usr := mid.GetUser(c)
+	ctx := c.Request.Context()
+	usr := mid.GetUser(ctx)
 
-	if err := h.user.Delete(c, mid.GetUser(c)); err != nil {
+	if err := h.user.Delete(ctx, mid.GetUser(ctx)); err != nil {
 		return fmt.Errorf("delete: userID[%s]: %w", usr.ID, err)
 	}
 
@@ -255,12 +257,13 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 		return err
 	}
 
-	users, err := h.user.Query(c, filter, orderBy, page.Number, page.RowsPerPage)
+	ctx := c.Request.Context()
+	users, err := h.user.Query(ctx, filter, orderBy, page.Number, page.RowsPerPage)
 	if err != nil {
 		return fmt.Errorf("query: %w", err)
 	}
 
-	total, err := h.user.Count(c, filter)
+	total, err := h.user.Count(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("count: %w", err)
 	}
@@ -271,7 +274,7 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 
 // queryByID returns a user by its ID.
 func (h *handlers) ginQueryByID(c *gin.Context) error {
-	c.JSON(http.StatusOK, toAppUser(mid.GetUser(c)))
+	c.JSON(http.StatusOK, toAppUser(mid.GetUser(c.Request.Context())))
 	return nil
 }
 
@@ -295,7 +298,7 @@ func (h *handlers) ginToken(c *gin.Context) error {
 		return auth.NewAuthError("invalid email format")
 	}
 
-	usr, err := h.user.Authenticate(c, *addr, pass)
+	usr, err := h.user.Authenticate(c.Request.Context(), *addr, pass)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrNotFound):

@@ -73,12 +73,13 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 		return err
 	}
 
-	prds, err := h.vProduct.Query(c, filter, orderBy, page.Number, page.RowsPerPage)
+	ctx := c.Request.Context()
+	prds, err := h.vProduct.Query(ctx, filter, orderBy, page.Number, page.RowsPerPage)
 	if err != nil {
 		return fmt.Errorf("query: %w", err)
 	}
 
-	total, err := h.vProduct.Count(c, filter)
+	total, err := h.vProduct.Count(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("count: %w", err)
 	}

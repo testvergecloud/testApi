@@ -63,7 +63,8 @@ func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 // create adds a new user and product at the same time under a single transaction.
 func (h *handlers) ginCreate(c *gin.Context) error {
-	h, err := h.executeUnderTransaction(c)
+	ctx := c.Request.Context()
+	h, err := h.executeUnderTransaction(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return err
@@ -87,7 +88,7 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 		return err
 	}
 
-	usr, err := h.user.Create(c, nu)
+	usr, err := h.user.Create(ctx, nu)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return err
@@ -95,7 +96,7 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 
 	np.UserID = usr.ID
 
-	prd, err := h.product.Create(c, np)
+	prd, err := h.product.Create(ctx, np)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return err

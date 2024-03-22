@@ -92,10 +92,11 @@ func (h *handlers) liveness(ctx context.Context, w http.ResponseWriter, r *http.
 func (h *handlers) ginReadiness(c *gin.Context) error {
 	status := "ok"
 	statusCode := http.StatusOK
-	if err := sqldb.StatusCheck(c, h.db); err != nil {
+	ctx := c.Request.Context()
+	if err := sqldb.StatusCheck(ctx, h.db); err != nil {
 		status = "db not ready"
 		statusCode = http.StatusInternalServerError
-		h.log.Info(c, "readiness failure", "status", status)
+		h.log.Info(ctx, "readiness failure", "status", status)
 		return c.AbortWithError(statusCode, err)
 	}
 
