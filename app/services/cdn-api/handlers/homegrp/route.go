@@ -27,20 +27,34 @@ type Config struct {
 
 // Routes adds specific routes for this group.
 func Routes(app *web.App, cfg Config) {
-	const version = "v1"
+	const version = "/v1"
 
 	usrCore := user.NewCore(cfg.Log, cfg.Delegate, usercache.NewStore(cfg.Log, userdb.NewStore(cfg.Log, cfg.DB)))
 	hmeCore := home.NewCore(cfg.Log, usrCore, cfg.Delegate, homedb.NewStore(cfg.Log, cfg.DB))
 
-	authen := mid.Authenticate(cfg.Auth)
-	ruleAny := mid.Authorize(cfg.Auth, auth.RuleAny)
-	ruleUserOnly := mid.Authorize(cfg.Auth, auth.RuleUserOnly)
-	ruleAdminOrSubject := mid.AuthorizeHome(cfg.Auth, auth.RuleAdminOrSubject, hmeCore)
-
 	hdl := new(hmeCore)
-	app.Handle(http.MethodGet, version, "/homes", hdl.query, authen, ruleAny)
-	app.Handle(http.MethodGet, version, "/homes/{home_id}", hdl.queryByID, authen, ruleAdminOrSubject)
-	app.Handle(http.MethodPost, version, "/homes", hdl.create, authen, ruleUserOnly)
-	app.Handle(http.MethodPut, version, "/homes/{home_id}", hdl.update, authen, ruleAdminOrSubject)
-	app.Handle(http.MethodDelete, version, "/homes/{home_id}", hdl.delete, authen, ruleAdminOrSubject)
+	v1 := app.Mux.Group(version)
+	{
+		v1.Use(mid.Authenticate(cfg.Auth))
+
+		ruleAny := v1.Group("/homes")
+		{
+			ruleAny.Use(mid.Authorize(cfg.Auth, auth.RuleAny))
+			app.GinHandle(http.MethodGet, ruleAny, "", hdl.query)
+		}
+
+		ruleUserOnly := v1.Group("/homes")
+		{
+			ruleUserOnly.Use(mid.Authorize(cfg.Auth, auth.RuleUserOnly))
+			app.GinHandle(http.MethodPost, ruleUserOnly, "", hdl.create)
+		}
+
+		ruleAdminOrSubject := v1.Group("/homes").Group("/{home_id}")
+		{
+			ruleAdminOrSubject.Use(mid.AuthorizeHome(cfg.Auth, auth.RuleAdminOrSubject, hmeCore))
+			app.GinHandle(http.MethodGet, ruleAdminOrSubject, "", hdl.queryByID)
+			app.GinHandle(http.MethodPut, ruleAdminOrSubject, "", hdl.update)
+			app.GinHandle(http.MethodDelete, ruleAdminOrSubject, "", hdl.delete)
+		}
+	}
 }
