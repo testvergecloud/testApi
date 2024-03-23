@@ -208,7 +208,7 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 	a.ginHandler(method, g, path, gin.WrapF(h))
 }
 
-func (a *App) GinHandle(method string, group string, path string, handler GinHandler) {
+func (a *App) GinHandle(method string, group *gin.RouterGroup, path string, handler GinHandler) {
 	h := func(c *gin.Context) {
 		c, span := a.ginStartSpan(c)
 		defer span.End()
@@ -233,8 +233,8 @@ func (a *App) GinHandle(method string, group string, path string, handler GinHan
 	// 	finalPath = "/" + group + path
 	// }
 
-	g := a.Mux.Group(group)
-	a.ginHandler(method, g, path, h)
+	// g := a.Mux.Group(group)
+	a.ginHandler(method, group, path, h)
 }
 
 func (a *App) GinTrace(c *gin.Context) {

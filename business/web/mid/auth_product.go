@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/core/crud/product"
-	wb "github.com/testvergecloud/testApi/business/web"
 	"github.com/testvergecloud/testApi/business/web/auth"
-	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -35,43 +34,45 @@ func setProduct(ctx context.Context, prd product.Product) context.Context {
 // product from the DB if a product id is specified in the call. Depending on
 // the rule specified, the userid from the claims may be compared with the
 // specified user id from the product.
-func AuthorizeProduct(a *auth.Auth, rule string, prdCore *product.Core) wf.MidHandler {
-	m := func(handler wf.Handler) wf.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			var userID uuid.UUID
+func AuthorizeProduct(a *auth.Auth, rule string, prdCore *product.Core) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var userID uuid.UUID
 
-			if id := wf.Param(r, "product_id"); id != "" {
-				var err error
-				productID, err := uuid.Parse(id)
-				if err != nil {
-					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
-				}
-
-				prd, err := prdCore.QueryByID(ctx, productID)
-				if err != nil {
-					switch {
-					case errors.Is(err, product.ErrNotFound):
-						return wb.NewTrustedError(err, http.StatusNoContent)
-					default:
-						return fmt.Errorf("querybyid: productID[%s]: %w", productID, err)
-					}
-				}
-
-				userID = prd.UserID
-				ctx = setProduct(ctx, prd)
+		if id := c.Param("product_id"); id != "" {
+			var err error
+			productID, err := uuid.Parse(id)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid ID: %s", err)})
+				c.Abort()
+				return
 			}
 
-			claims := getClaims(ctx)
-
-			if err := a.Authorize(ctx, claims, userID, rule); err != nil {
-				return auth.NewAuthError("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)
+			prd, err := prdCore.QueryByID(c, productID)
+			if err != nil {
+				switch {
+				case errors.Is(err, product.ErrNotFound):
+					c.JSON(http.StatusNoContent, gin.H{"error": err.Error()})
+					c.Abort()
+					return
+				default:
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("querybyid: productID[%s]: %w", productID, err)})
+					c.Abort()
+					return
+				}
 			}
 
-			return handler(ctx, w, r)
+			userID = prd.UserID
+			c.Request = c.Request.WithContext(setProduct(c.Request.Context(), prd))
 		}
 
-		return h
-	}
+		claims := getClaims(c.Request.Context())
 
-	return m
+		if err := a.Authorize(c.Request.Context(), claims, userID, rule); err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": fmt.Sprintf("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
 }

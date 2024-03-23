@@ -1,13 +1,12 @@
 package mid
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
-	wb "github.com/testvergecloud/testApi/business/web"
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/web/auth"
-	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/google/uuid"
 )
@@ -18,49 +17,55 @@ var (
 )
 
 // Authenticate validates a JWT from the `Authorization` header.
-func Authenticate(a *auth.Auth) wf.MidHandler {
-	m := func(handler wf.Handler) wf.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			claims, err := a.Authenticate(ctx, r.Header.Get("authorization"))
-			if err != nil {
-				return auth.NewAuthError("authenticate: failed: %s", err)
-			}
-
-			if claims.Subject == "" {
-				return auth.NewAuthError("authorize: you are not authorized for that action, no claims")
-			}
-
-			subjectID, err := uuid.Parse(claims.Subject)
-			if err != nil {
-				return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
-			}
-
-			ctx = setUserID(ctx, subjectID)
-			ctx = setClaims(ctx, claims)
-
-			return handler(ctx, w, r)
+func Authenticate(a *auth.Auth) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claims, err := a.Authenticate(c, c.GetHeader("authorization"))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate: failed: %s", err)})
+			c.Abort()
+			return
 		}
 
-		return h
-	}
+		if claims.Subject == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorize: you are not authorized for that action, no claims"})
+			c.Abort()
+			return
+		}
 
-	return m
+		subjectID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidID})
+			c.Abort()
+			return
+		}
+
+		c.Set("userID", subjectID)
+		c.Set("claims", claims)
+
+		c.Next()
+	}
 }
 
 // Authorize executes the specified role and does not extract any domain data.
-func Authorize(a *auth.Auth, rule string) wf.MidHandler {
-	m := func(handler wf.Handler) wf.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			claims := getClaims(ctx)
-			if err := a.Authorize(ctx, claims, uuid.UUID{}, rule); err != nil {
-				return auth.NewAuthError("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)
-			}
-
-			return handler(ctx, w, r)
+func Authorize(a *auth.Auth, rule string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claims := getClaims(c)
+		if err := a.Authorize(c, claims, uuid.UUID{}, rule); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)})
+			c.Abort()
+			return
 		}
 
-		return h
-	}
+		subjectID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidID})
+			c.Abort()
+			return
+		}
 
-	return m
+		c.Set("userID", subjectID)
+		c.Set("claims", claims)
+
+		c.Next()
+	}
 }

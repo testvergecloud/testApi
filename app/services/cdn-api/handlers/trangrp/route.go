@@ -28,14 +28,16 @@ type Config struct {
 
 // Routes adds specific routes for this group.
 func Routes(app *web.App, cfg Config) {
-	const version = "v1"
+	const version = "/v1"
 
 	usrCore := user.NewCore(cfg.Log, cfg.Delegate, usercache.NewStore(cfg.Log, userdb.NewStore(cfg.Log, cfg.DB)))
 	prdCore := product.NewCore(cfg.Log, usrCore, cfg.Delegate, productdb.NewStore(cfg.Log, cfg.DB))
 
-	authen := mid.Authenticate(cfg.Auth)
-	tran := mid.ExecuteInTransaction(cfg.Log, sqldb.NewBeginner(cfg.DB))
-
 	hdl := new(usrCore, prdCore)
-	app.Handle(http.MethodPost, version, "/tranexample", hdl.create, authen, tran)
+	v1 := app.Mux.Group(version)
+	{
+		v1.Use(mid.Authenticate(cfg.Auth))
+		v1.Use(mid.ExecuteInTransaction(cfg.Log, sqldb.NewBeginner(cfg.DB)))
+		app.GinHandle(http.MethodPost, v1, "/tranexample", hdl.create)
+	}
 }

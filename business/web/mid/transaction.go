@@ -1,61 +1,62 @@
 package mid
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/data/transaction"
 	"github.com/testvergecloud/testApi/foundation/logger"
-	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // ExecuteInTransaction starts a transaction around all the storage calls within
 // the scope of the handler function.
-func ExecuteInTransaction(log *logger.Logger, bgn transaction.Beginner) web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			hasCommitted := false
+// ExecuteInTransaction starts a transaction around all the storage calls within
+// the scope of the handler function.
+func ExecuteInTransaction(log *logger.Logger, bgn transaction.Beginner) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		hasCommitted := false
 
-			log.Info(ctx, "BEGIN TRANSACTION")
-			tx, err := bgn.Begin()
-			if err != nil {
-				return fmt.Errorf("BEGIN TRANSACTION: %w", err)
-			}
-
-			defer func() {
-				if !hasCommitted {
-					log.Info(ctx, "ROLLBACK TRANSACTION")
-				}
-
-				if err := tx.Rollback(); err != nil {
-					if errors.Is(err, sql.ErrTxDone) {
-						return
-					}
-					log.Info(ctx, "ROLLBACK TRANSACTION", "ERROR", err)
-				}
-			}()
-
-			ctx = transaction.Set(ctx, tx)
-
-			if err := handler(ctx, w, r); err != nil {
-				return fmt.Errorf("EXECUTE TRANSACTION: %w", err)
-			}
-
-			log.Info(ctx, "COMMIT TRANSACTION")
-			if err := tx.Commit(); err != nil {
-				return fmt.Errorf("COMMIT TRANSACTION: %w", err)
-			}
-
-			hasCommitted = true
-
-			return nil
+		log.Info(c, "BEGIN TRANSACTION")
+		tx, err := bgn.Begin()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("BEGIN TRANSACTION: %s", err)})
+			c.Abort()
+			return
 		}
 
-		return h
-	}
+		defer func() {
+			if !hasCommitted {
+				log.Info(c, "ROLLBACK TRANSACTION")
+			}
 
-	return m
+			if err := tx.Rollback(); err != nil {
+				if errors.Is(err, sql.ErrTxDone) {
+					return
+				}
+				log.Info(c, "ROLLBACK TRANSACTION", "ERROR", err)
+			}
+		}()
+
+		c.Request = c.Request.WithContext(transaction.Set(c.Request.Context(), tx))
+
+		c.Next()
+
+		if len(c.Errors) > 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("EXECUTE TRANSACTION: %s", c.Errors)})
+			c.Abort()
+			return
+		}
+
+		log.Info(c, "COMMIT TRANSACTION")
+		if err := tx.Commit(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("COMMIT TRANSACTION: %s", err)})
+			c.Abort()
+			return
+		}
+
+		hasCommitted = true
+	}
 }

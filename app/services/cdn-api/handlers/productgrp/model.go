@@ -1,9 +1,9 @@
 package productgrp
 
 import (
-	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/core/crud/product"
 	"github.com/testvergecloud/testApi/business/web/mid"
 	"github.com/testvergecloud/testApi/foundation/validate"
@@ -48,9 +48,9 @@ type AppNewProduct struct {
 	Quantity int     `json:"quantity" validate:"required,gte=1"`
 }
 
-func toCoreNewProduct(ctx context.Context, app AppNewProduct) product.NewProduct {
+func toCoreNewProduct(c *gin.Context, app AppNewProduct) product.NewProduct {
 	prd := product.NewProduct{
-		UserID:   mid.GetUserID(ctx),
+		UserID:   mid.GetUserID(c),
 		Name:     app.Name,
 		Cost:     app.Cost,
 		Quantity: app.Quantity,

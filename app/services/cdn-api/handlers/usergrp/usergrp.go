@@ -2,7 +2,6 @@
 package usergrp
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 	"github.com/testvergecloud/testApi/business/web/mid"
 	"github.com/testvergecloud/testApi/business/web/page"
 	"github.com/testvergecloud/testApi/foundation/validate"
-	wf "github.com/testvergecloud/testApi/foundation/web"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -34,145 +32,7 @@ func new(user *user.Core, auth *auth.Auth) *handlers {
 }
 
 // create adds a new user to the system.
-func (h *handlers) create(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var app AppNewUser
-	if err := wf.Decode(r, &app); err != nil {
-		return wb.NewTrustedError(err, http.StatusBadRequest)
-	}
-
-	nc, err := toCoreNewUser(app)
-	if err != nil {
-		return wb.NewTrustedError(err, http.StatusBadRequest)
-	}
-
-	usr, err := h.user.Create(ctx, nc)
-	if err != nil {
-		if errors.Is(err, user.ErrUniqueEmail) {
-			return wb.NewTrustedError(err, http.StatusConflict)
-		}
-		return fmt.Errorf("create: usr[%+v]: %w", usr, err)
-	}
-
-	return wf.Respond(ctx, w, toAppUser(usr), http.StatusCreated)
-}
-
-// update updates a user in the system.
-func (h *handlers) update(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var app AppUpdateUser
-	if err := wf.Decode(r, &app); err != nil {
-		return wb.NewTrustedError(err, http.StatusBadRequest)
-	}
-
-	uu, err := toCoreUpdateUser(app)
-	if err != nil {
-		return wb.NewTrustedError(err, http.StatusBadRequest)
-	}
-
-	usr := mid.GetUser(ctx)
-
-	updUsr, err := h.user.Update(ctx, usr, uu)
-	if err != nil {
-		return fmt.Errorf("update: userID[%s] uu[%+v]: %w", usr.ID, uu, err)
-	}
-
-	return wf.Respond(ctx, w, toAppUser(updUsr), http.StatusOK)
-}
-
-// delete removes a user from the system.
-func (h *handlers) delete(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	usr := mid.GetUser(ctx)
-
-	if err := h.user.Delete(ctx, mid.GetUser(ctx)); err != nil {
-		return fmt.Errorf("delete: userID[%s]: %w", usr.ID, err)
-	}
-
-	return wf.Respond(ctx, w, nil, http.StatusNoContent)
-}
-
-// query returns a list of users with paging.
-func (h *handlers) query(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	page, err := page.Parse(r)
-	if err != nil {
-		return err
-	}
-
-	filter, err := parseFilter(r)
-	if err != nil {
-		return err
-	}
-
-	orderBy, err := parseOrder(r)
-	if err != nil {
-		return err
-	}
-
-	users, err := h.user.Query(ctx, filter, orderBy, page.Number, page.RowsPerPage)
-	if err != nil {
-		return fmt.Errorf("query: %w", err)
-	}
-
-	total, err := h.user.Count(ctx, filter)
-	if err != nil {
-		return fmt.Errorf("count: %w", err)
-	}
-
-	return wf.Respond(ctx, w, wb.NewPageDocument(toAppUsers(users), total, page.Number, page.RowsPerPage), http.StatusOK)
-}
-
-// queryByID returns a user by its ID.
-func (h *handlers) queryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return wf.Respond(ctx, w, toAppUser(mid.GetUser(ctx)), http.StatusOK)
-}
-
-// token provides an API token for the authenticated user.
-func (h *handlers) token(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	kid := wf.Param(r, "kid")
-	if kid == "" {
-		return validate.NewFieldsError("kid", errors.New("missing kid"))
-	}
-
-	email, pass, ok := r.BasicAuth()
-	if !ok {
-		return auth.NewAuthError("must provide email and password in Basic auth")
-	}
-
-	addr, err := mail.ParseAddress(email)
-	if err != nil {
-		return auth.NewAuthError("invalid email format")
-	}
-
-	usr, err := h.user.Authenticate(ctx, *addr, pass)
-	if err != nil {
-		switch {
-		case errors.Is(err, user.ErrNotFound):
-			return wb.NewTrustedError(err, http.StatusNotFound)
-		case errors.Is(err, user.ErrAuthenticationFailure):
-			return auth.NewAuthError(err.Error())
-		default:
-			return fmt.Errorf("authenticate: %w", err)
-		}
-	}
-
-	claims := auth.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   usr.ID.String(),
-			Issuer:    "service project",
-			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		},
-		Roles: usr.Roles,
-	}
-
-	token, err := h.auth.GenerateToken(kid, claims)
-	if err != nil {
-		return fmt.Errorf("generatetoken: %w", err)
-	}
-
-	return wf.Respond(ctx, w, toToken(token), http.StatusOK)
-}
-
-// create adds a new user to the system.
-func (h *handlers) ginCreate(c *gin.Context) error {
+func (h *handlers) create(c *gin.Context) error {
 	var app AppNewUser
 	if err := c.ShouldBindJSON(&app); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -199,7 +59,7 @@ func (h *handlers) ginCreate(c *gin.Context) error {
 }
 
 // update updates a user in the system.
-func (h *handlers) ginUpdate(c *gin.Context) error {
+func (h *handlers) update(c *gin.Context) error {
 	var app AppUpdateUser
 	if err := c.ShouldBindJSON(&app); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -213,7 +73,7 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 	}
 
 	ctx := c.Request.Context()
-	usr := mid.GetUser(ctx)
+	usr := mid.GetUser(c)
 
 	updUsr, err := h.user.Update(ctx, usr, uu)
 	if err != nil {
@@ -225,11 +85,11 @@ func (h *handlers) ginUpdate(c *gin.Context) error {
 }
 
 // delete removes a user from the system.
-func (h *handlers) ginDelete(c *gin.Context) error {
+func (h *handlers) delete(c *gin.Context) error {
 	ctx := c.Request.Context()
-	usr := mid.GetUser(ctx)
+	usr := mid.GetUser(c)
 
-	if err := h.user.Delete(ctx, mid.GetUser(ctx)); err != nil {
+	if err := h.user.Delete(ctx, mid.GetUser(c)); err != nil {
 		return fmt.Errorf("delete: userID[%s]: %w", usr.ID, err)
 	}
 
@@ -238,7 +98,7 @@ func (h *handlers) ginDelete(c *gin.Context) error {
 }
 
 // query returns a list of users with paging.
-func (h *handlers) ginQuery(c *gin.Context) error {
+func (h *handlers) query(c *gin.Context) error {
 	page, err := page.Parse(c.Request)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -273,13 +133,13 @@ func (h *handlers) ginQuery(c *gin.Context) error {
 }
 
 // queryByID returns a user by its ID.
-func (h *handlers) ginQueryByID(c *gin.Context) error {
-	c.JSON(http.StatusOK, toAppUser(mid.GetUser(c.Request.Context())))
+func (h *handlers) queryByID(c *gin.Context) error {
+	c.JSON(http.StatusOK, toAppUser(mid.GetUser(c)))
 	return nil
 }
 
 // token provides an API token for the authenticated user.
-func (h *handlers) ginToken(c *gin.Context) error {
+func (h *handlers) token(c *gin.Context) error {
 	kid := c.Param("kid")
 	if kid == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing kid"})

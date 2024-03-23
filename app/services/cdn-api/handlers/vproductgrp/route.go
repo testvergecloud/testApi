@@ -22,13 +22,15 @@ type Config struct {
 
 // Routes adds specific routes for this group.
 func Routes(app *web.App, cfg Config) {
-	const version = "v1"
+	const version = "/v1"
 
 	vPrdCore := vproduct.NewCore(vproductdb.NewStore(cfg.Log, cfg.DB))
 
-	authen := mid.Authenticate(cfg.Auth)
-	ruleAdmin := mid.Authorize(cfg.Auth, auth.RuleAdminOnly)
-
 	hdl := new(vPrdCore)
-	app.Handle(http.MethodGet, version, "/vproducts", hdl.Query, authen, ruleAdmin)
+	v1 := app.Mux.Group(version)
+	{
+		v1.Use(mid.Authenticate(cfg.Auth))
+		v1.Use(mid.Authorize(cfg.Auth, auth.RuleAdminOnly))
+		app.GinHandle(http.MethodGet, v1, "/vproducts", hdl.Query)
+	}
 }

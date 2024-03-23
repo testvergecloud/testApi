@@ -1,76 +1,72 @@
 package mid
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/testvergecloud/testApi/business/core/crud/home"
-	wb "github.com/testvergecloud/testApi/business/web"
-	"github.com/testvergecloud/testApi/business/web/auth"
-	wf "github.com/testvergecloud/testApi/foundation/web"
-
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/testvergecloud/testApi/business/core/crud/home"
+	"github.com/testvergecloud/testApi/business/web/auth"
 )
 
-type ctxHomeKey int
+type ctxHomeKey string
 
-const homeKey ctxHomeKey = 1
+const homeKey ctxHomeKey = "home"
 
 // GetHome returns the home from the context.
-func GetHome(ctx context.Context) home.Home {
-	v, ok := ctx.Value(homeKey).(home.Home)
+func GetHome(c *gin.Context) home.Home {
+	v, ok := c.Get(string(homeKey))
 	if !ok {
 		return home.Home{}
 	}
-	return v
+	return v.(home.Home)
 }
 
-func setHome(ctx context.Context, hme home.Home) context.Context {
-	return context.WithValue(ctx, homeKey, hme)
+func setHome(c *gin.Context, hme home.Home) {
+	c.Set(string(homeKey), hme)
 }
 
 // AuthorizeHome executes the specified role and extracts the specified
 // home from the DB if a home id is specified in the call. Depending on
 // the rule specified, the userid from the claims may be compared with the
 // specified user id from the home.
-func AuthorizeHome(a *auth.Auth, rule string, hmeCore *home.Core) wf.MidHandler {
-	m := func(handler wf.Handler) wf.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			var userID uuid.UUID
+func AuthorizeHome(a *auth.Auth, rule string, hmeCore *home.Core) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var userID uuid.UUID
 
-			if id := wf.Param(r, "home_id"); id != "" {
-				var err error
-				homeID, err := uuid.Parse(id)
-				if err != nil {
-					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
-				}
-
-				hme, err := hmeCore.QueryByID(ctx, homeID)
-				if err != nil {
-					switch {
-					case errors.Is(err, home.ErrNotFound):
-						return wb.NewTrustedError(err, http.StatusNoContent)
-					default:
-						return fmt.Errorf("querybyid: homeID[%s]: %w", homeID, err)
-					}
-				}
-
-				userID = hme.UserID
-				ctx = setHome(ctx, hme)
+		if id := c.Param("home_id"); id != "" {
+			homeID, err := uuid.Parse(id)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidID})
+				c.Abort()
+				return
 			}
 
-			claims := getClaims(ctx)
-			if err := a.Authorize(ctx, claims, userID, rule); err != nil {
-				return auth.NewAuthError("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)
+			hme, err := hmeCore.QueryByID(c, homeID)
+			if err != nil {
+				switch {
+				case errors.Is(err, home.ErrNotFound):
+					c.JSON(http.StatusNoContent, gin.H{"error": err.Error()})
+				default:
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("querybyid: homeID[%s]: %s", homeID, err)})
+				}
+				c.Abort()
+				return
 			}
 
-			return handler(ctx, w, r)
+			userID = hme.UserID
+			setHome(c, hme)
 		}
 
-		return h
-	}
+		claims := getClaims(c)
+		if err := a.Authorize(c, claims, userID, rule); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)})
+			c.Abort()
+			return
+		}
 
-	return m
+		c.Next()
+	}
 }

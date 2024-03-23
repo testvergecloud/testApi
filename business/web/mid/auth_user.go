@@ -1,17 +1,12 @@
 package mid
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/testvergecloud/testApi/business/core/crud/user"
-	wb "github.com/testvergecloud/testApi/business/web"
-	"github.com/testvergecloud/testApi/business/web/auth"
-	wf "github.com/testvergecloud/testApi/foundation/web"
-
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/testvergecloud/testApi/business/core/crud/user"
+	"github.com/testvergecloud/testApi/business/web/auth"
 )
 
 type ctxUserKey int
@@ -22,70 +17,65 @@ const (
 )
 
 // GetUserID returns the claims from the context.
-func GetUserID(ctx context.Context) uuid.UUID {
-	v, ok := ctx.Value(userIDKey).(uuid.UUID)
+func GetUserID(c *gin.Context) uuid.UUID {
+	v, ok := c.Get(string(userIDKey))
 	if !ok {
 		return uuid.UUID{}
 	}
-	return v
+	return v.(uuid.UUID)
 }
 
 // GetUser returns the user from the context.
-func GetUser(ctx context.Context) user.User {
-	v, ok := ctx.Value(userKey).(user.User)
+func GetUser(c *gin.Context) user.User {
+	v, ok := c.Get(string(userKey))
 	if !ok {
 		return user.User{}
 	}
-	return v
+	return v.(user.User)
 }
 
-func setUserID(ctx context.Context, userID uuid.UUID) context.Context {
-	return context.WithValue(ctx, userIDKey, userID)
+func setUserID(c *gin.Context, userID uuid.UUID) {
+	c.Set(string(userIDKey), userID)
 }
 
-func setUser(ctx context.Context, usr user.User) context.Context {
-	return context.WithValue(ctx, userKey, usr)
+func setUser(c *gin.Context, usr user.User) {
+	c.Set(string(userKey), usr)
 }
 
 // AuthorizeUser executes the specified role and extracts the specified user
 // from the DB if a user id is specified in the call. Depending on the rule
 // specified, the userid from the claims may be compared with the specified
 // user id.
-func AuthorizeUser(a *auth.Auth, rule string, usrCore *user.Core) wf.MidHandler {
-	m := func(handler wf.Handler) wf.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			var userID uuid.UUID
+func AuthorizeUser(a *auth.Auth, rule string, usrCore *user.Core) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var userID uuid.UUID
 
-			if id := wf.Param(r, "user_id"); id != "" {
-				var err error
-				userID, err = uuid.Parse(id)
-				if err != nil {
-					return wb.NewTrustedError(ErrInvalidID, http.StatusBadRequest)
-				}
-
-				usr, err := usrCore.QueryByID(ctx, userID)
-				if err != nil {
-					switch {
-					case errors.Is(err, user.ErrNotFound):
-						return wb.NewTrustedError(err, http.StatusNoContent)
-					default:
-						return fmt.Errorf("querybyid: userID[%s]: %w", userID, err)
-					}
-				}
-
-				ctx = setUser(ctx, usr)
+		if id := c.Param("user_id"); id != "" {
+			var err error
+			userID, err = uuid.Parse(id)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+				c.Abort()
+				return
 			}
 
-			claims := getClaims(ctx)
-			if err := a.Authorize(ctx, claims, userID, rule); err != nil {
-				return auth.NewAuthError("authorize: you are not authorized for that action, claims[%v] rule[%v]: %s", claims.Roles, rule, err)
+			usr, err := usrCore.QueryByID(c, userID)
+			if err != nil {
+				c.JSON(http.StatusNoContent, gin.H{"error": "User not found"})
+				c.Abort()
+				return
 			}
 
-			return handler(ctx, w, r)
+			setUser(c, usr)
 		}
 
-		return h
-	}
+		claims := getClaims(c)
+		if err := a.Authorize(c, claims, userID, rule); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized for that action"})
+			c.Abort()
+			return
+		}
 
-	return m
+		c.Next()
+	}
 }
