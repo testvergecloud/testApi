@@ -24,7 +24,7 @@ func Routes(app *web.App, cfg Config) {
 	{
 		// hdl := new(cfg.Build, cfg.Log, cfg.DB)
 		hdl := new("", cfg.Log, cfg.DB)
-		app.GinHandleNoMiddleware(http.MethodGet, v1, "/readiness", hdl.ginReadiness)
-		app.GinHandleNoMiddleware(http.MethodGet, v1, "/liveness", hdl.ginLiveness)
+		app.HandleNoMiddleware(http.MethodGet, v1, "/readiness", hdl.Readiness)
+		app.HandleNoMiddleware(http.MethodGet, v1, "/liveness", hdl.Liveness)
 	}
 }

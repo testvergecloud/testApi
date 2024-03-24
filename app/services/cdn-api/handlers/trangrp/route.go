@@ -38,6 +38,6 @@ func Routes(app *web.App, cfg Config) {
 	{
 		v1.Use(mid.Authenticate(cfg.Auth))
 		v1.Use(mid.ExecuteInTransaction(cfg.Log, sqldb.NewBeginner(cfg.DB)))
-		app.GinHandle(http.MethodPost, v1, "/tranexample", hdl.create)
+		app.Handle(http.MethodPost, v1, "/tranexample", hdl.create)
 	}
 }
