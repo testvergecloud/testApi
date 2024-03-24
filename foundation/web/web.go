@@ -74,33 +74,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // EnableCORS enables CORS preflight requests to work in the middleware. It
 // prevents the MethodNotAllowedHandler from being called. This must be enabled
 // for the CORS middleware to work.
-func (a *App) EnableCORS(mw MidHandler) {
-	a.mw = append(a.mw, mw)
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return Respond(ctx, w, "OK", http.StatusOK)
-	}
-	handler = wrapMiddleware(a.mw, handler)
-
-	h := func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := a.startSpan(w, r)
-		defer span.End()
-
-		v := Values{
-			TraceID: span.SpanContext().TraceID().String(),
-			Tracer:  a.tracer,
-			Now:     time.Now().UTC(),
-		}
-		ctx = setValues(ctx, &v)
-
-		handler(ctx, w, r)
-	}
-
-	// a.mux.HandleFunc("OPTIONS /", h)
-	a.Mux.GET("OPTIONS /", gin.WrapF(h))
-}
-
-func (a *App) GinEnableCORS(cors gin.HandlerFunc) {
+func (a *App) EnableCORS(cors gin.HandlerFunc) {
 	// Apply CORS middleware directly to the Gin router
 	a.Mux.Use(cors)
 
@@ -110,41 +84,13 @@ func (a *App) GinEnableCORS(cors gin.HandlerFunc) {
 	})
 
 	// Register tracing middleware
-	a.Mux.Use(a.GinTrace)
+	a.Mux.Use(a.Trace)
 }
 
 // HandleNoMiddleware sets a handler function for a given HTTP method and path pair
 // to the application server mux. Does not include the application middleware or
 // OTEL tracing.
-func (a *App) HandleNoMiddleware(method string, group string, path string, handler Handler) {
-	h := func(w http.ResponseWriter, r *http.Request) {
-		v := Values{
-			TraceID: uuid.NewString(),
-			Tracer:  nil,
-			Now:     time.Now().UTC(),
-		}
-		ctx := setValues(r.Context(), &v)
-
-		if err := handler(ctx, w, r); err != nil {
-			if validateError(err) {
-				a.SignalShutdown()
-				return
-			}
-		}
-	}
-
-	// finalPath := path
-	// if group != "" {
-	// 	finalPath = "/" + group + path
-	// }
-	// finalPath = fmt.Sprintf("%s %s", method, finalPath)
-
-	// a.mux.HandleFunc(finalPath, h)
-	g := a.Mux.Group(group)
-	a.ginHandler(method, g, path, gin.WrapF(h))
-}
-
-func (a *App) GinHandleNoMiddleware(method string, group *gin.RouterGroup, path string, handler GinHandler) {
+func (a *App) HandleNoMiddleware(method string, group *gin.RouterGroup, path string, handler GinHandler) {
 	h := func(c *gin.Context) {
 		v := Values{
 			TraceID: uuid.NewString(),
@@ -169,48 +115,14 @@ func (a *App) GinHandleNoMiddleware(method string, group *gin.RouterGroup, path 
 	// finalPath = fmt.Sprintf("%s %s", method, finalPath)
 
 	// a.mux.HandleFunc(finalPath, h)
-	a.ginHandler(method, group, path, h)
+	a.methodHandler(method, group, path, h)
 }
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the application server mux.
-func (a *App) Handle(method string, group string, path string, handler Handler, mw ...MidHandler) {
-	handler = wrapMiddleware(mw, handler)
-	handler = wrapMiddleware(a.mw, handler)
-
-	h := func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := a.startSpan(w, r)
-		defer span.End()
-
-		v := Values{
-			TraceID: span.SpanContext().TraceID().String(),
-			Tracer:  a.tracer,
-			Now:     time.Now().UTC(),
-		}
-		ctx = setValues(ctx, &v)
-
-		if err := handler(ctx, w, r); err != nil {
-			if validateError(err) {
-				a.SignalShutdown()
-				return
-			}
-		}
-	}
-
-	// finalPath := path
-	// if group != "" {
-	// 	finalPath = "/" + group + path
-	// }
-	// finalPath = fmt.Sprintf("%s %s", method, finalPath)
-
-	// a.mux.HandleFunc(finalPath, h)
-	g := a.Mux.Group(group)
-	a.ginHandler(method, g, path, gin.WrapF(h))
-}
-
-func (a *App) GinHandle(method string, group *gin.RouterGroup, path string, handler GinHandler) {
+func (a *App) Handle(method string, group *gin.RouterGroup, path string, handler GinHandler) {
 	h := func(c *gin.Context) {
-		c, span := a.ginStartSpan(c)
+		span := a.startSpan(c)
 		defer span.End()
 
 		v := Values{
@@ -234,11 +146,11 @@ func (a *App) GinHandle(method string, group *gin.RouterGroup, path string, hand
 	// }
 
 	// g := a.Mux.Group(group)
-	a.ginHandler(method, group, path, h)
+	a.methodHandler(method, group, path, h)
 }
 
-func (a *App) GinTrace(c *gin.Context) {
-	ctx, span := a.startSpan(c.Writer, c.Request)
+func (a *App) Trace(c *gin.Context) {
+	span := a.startSpan(c)
 	defer span.End()
 
 	v := Values{
@@ -247,33 +159,12 @@ func (a *App) GinTrace(c *gin.Context) {
 		Now:     time.Now().UTC(),
 	}
 
-	ctx = setValues(ctx, &v)
-	c.Request = c.Request.WithContext(ctx)
+	c.Request = c.Request.WithContext(setValues(c.Request.Context(), &v))
 }
 
 // startSpan initializes the request by adding a span and writing otel
 // related information into the response writer for the trusted.
-func (a *App) startSpan(w http.ResponseWriter, r *http.Request) (context.Context, trace.Span) {
-	ctx := r.Context()
-
-	// There are times when the handler is called without a tracer, such
-	// as with tests. We need a span for the trace id.
-	span := trace.SpanFromContext(ctx)
-
-	// If a tracer exists, then replace the span for the one currently
-	// found in the context. This may have come from over the wire.
-	if a.tracer != nil {
-		ctx, span = a.tracer.Start(ctx, "pkg.web.handle")
-		span.SetAttributes(attribute.String("endpoint", r.RequestURI))
-	}
-
-	// Inject the trace information into the trusted.
-	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(w.Header()))
-
-	return ctx, span
-}
-
-func (a *App) ginStartSpan(c *gin.Context) (*gin.Context, trace.Span) {
+func (a *App) startSpan(c *gin.Context) trace.Span {
 	// Retrieve the existing span from the Gin context.
 	span := trace.SpanFromContext(c)
 
@@ -288,7 +179,7 @@ func (a *App) ginStartSpan(c *gin.Context) (*gin.Context, trace.Span) {
 	// Inject the trace information into the response headers.
 	otel.GetTextMapPropagator().Inject(c, propagation.HeaderCarrier(c.Writer.Header()))
 
-	return c, span
+	return span
 }
 
 // validateError validates the error for special conditions that do not
@@ -330,7 +221,7 @@ func validateError(err error) bool {
 	return true
 }
 
-func (a *App) ginHandler(method string, group *gin.RouterGroup, path string, f gin.HandlerFunc) {
+func (a *App) methodHandler(method string, group *gin.RouterGroup, path string, f gin.HandlerFunc) {
 	switch method {
 	case http.MethodGet:
 		group.GET(path, f)

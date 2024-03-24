@@ -40,21 +40,21 @@ func Routes(app *web.App, cfg Config) {
 		ruleAny := v1.Group("/products")
 		{
 			ruleAny.Use(mid.Authorize(cfg.Auth, auth.RuleAny))
-			app.GinHandle(http.MethodGet, ruleAny, "", hdl.query)
+			app.Handle(http.MethodGet, ruleAny, "", hdl.query)
 		}
 
 		ruleUserOnly := v1.Group("/products")
 		{
 			ruleUserOnly.Use(mid.Authorize(cfg.Auth, auth.RuleUserOnly))
-			app.GinHandle(http.MethodPost, ruleUserOnly, "", hdl.create)
+			app.Handle(http.MethodPost, ruleUserOnly, "", hdl.create)
 		}
 
 		ruleAdminOrSubject := v1.Group("/products").Group("/{product_id}")
 		{
 			ruleAdminOrSubject.Use(mid.AuthorizeProduct(cfg.Auth, auth.RuleAdminOrSubject, prdCore))
-			app.GinHandle(http.MethodGet, ruleAdminOrSubject, "", hdl.queryByID)
-			app.GinHandle(http.MethodPut, ruleAdminOrSubject, "", hdl.update)
-			app.GinHandle(http.MethodDelete, ruleAdminOrSubject, "", hdl.delete)
+			app.Handle(http.MethodGet, ruleAdminOrSubject, "", hdl.queryByID)
+			app.Handle(http.MethodPut, ruleAdminOrSubject, "", hdl.update)
+			app.Handle(http.MethodDelete, ruleAdminOrSubject, "", hdl.delete)
 		}
 	}
 }

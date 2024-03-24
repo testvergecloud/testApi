@@ -31,6 +31,6 @@ func Routes(app *web.App, cfg Config) {
 	{
 		v1.Use(mid.Authenticate(cfg.Auth))
 		v1.Use(mid.Authorize(cfg.Auth, auth.RuleAdminOnly))
-		app.GinHandle(http.MethodGet, v1, "/vproducts", hdl.Query)
+		app.Handle(http.MethodGet, v1, "/vproducts", hdl.Query)
 	}
 }

@@ -34,7 +34,7 @@ func Routes(app *web.App, cfg Config) {
 	{
 		noAuth := v1.Group("/users")
 		{
-			app.GinHandle(http.MethodGet, noAuth, "/token/{kid}", hdl.token)
+			app.Handle(http.MethodGet, noAuth, "/token/{kid}", hdl.token)
 		}
 
 		ruleAdmin := v1.Group("/users")
@@ -42,8 +42,8 @@ func Routes(app *web.App, cfg Config) {
 			ruleAdmin.Use(mid.Authenticate(cfg.Auth))
 			ruleAdmin.Use(mid.Authorize(cfg.Auth, auth.RuleAdminOnly))
 
-			app.GinHandle(http.MethodGet, ruleAdmin, "", hdl.query)
-			app.GinHandle(http.MethodPost, ruleAdmin, "", hdl.create)
+			app.Handle(http.MethodGet, ruleAdmin, "", hdl.query)
+			app.Handle(http.MethodPost, ruleAdmin, "", hdl.create)
 		}
 
 		ruleAdminOrSubject := v1.Group("/users").Group("/{user_id}")
@@ -51,9 +51,9 @@ func Routes(app *web.App, cfg Config) {
 			ruleAdminOrSubject.Use(mid.Authenticate(cfg.Auth))
 			ruleAdminOrSubject.Use(mid.AuthorizeUser(cfg.Auth, auth.RuleAdminOrSubject, usrCore))
 
-			app.GinHandle(http.MethodGet, ruleAdminOrSubject, "", hdl.queryByID)
-			app.GinHandle(http.MethodPut, ruleAdminOrSubject, "", hdl.update)
-			app.GinHandle(http.MethodDelete, ruleAdminOrSubject, "", hdl.delete)
+			app.Handle(http.MethodGet, ruleAdminOrSubject, "", hdl.queryByID)
+			app.Handle(http.MethodPut, ruleAdminOrSubject, "", hdl.update)
+			app.Handle(http.MethodDelete, ruleAdminOrSubject, "", hdl.delete)
 		}
 	}
 }
