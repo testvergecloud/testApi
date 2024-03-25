@@ -99,7 +99,7 @@ spec:
     app: database
   ports:
   - name: postgres
-    port: 5432
+    port: 5532
     targetPort: postgres
 ---
 apiVersion: v1

@@ -19,10 +19,10 @@ data:
   promtail.yaml: |
     server:
       log_level: info
-      http_listen_port: 3102
+      http_listen_port: 3132
 
     clients:
-      - url: http://loki:3101/loki/api/v1/push
+      - url: http://loki:3131/loki/api/v1/push
 
     positions:
       filename: /run/promtail/positions.yaml
@@ -133,7 +133,7 @@ spec:
                   fieldPath: spec.nodeName
           ports:
             - name: http-metrics
-              containerPort: 3102
+              containerPort: 3132
               protocol: TCP
           resources:
             requests:

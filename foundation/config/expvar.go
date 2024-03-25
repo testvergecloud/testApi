@@ -32,7 +32,7 @@ func LoadExpvarConfig(path string, name string, typeC string) (*Expvar, error) {
 }
 
 func (e *Expvar) setDefault() {
-	e.Host = "0.0.0.0:3001"
+	e.Host = "0.0.0.0:3331"
 	e.Route = "/metrics"
 	e.ReadTimeout = time.Second * 5
 	e.WriteTimeout = time.Second * 10

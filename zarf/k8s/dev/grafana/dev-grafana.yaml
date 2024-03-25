@@ -42,7 +42,7 @@ data:
         editable: true
       - name: Prometheus
         type: prometheus
-        url: http://prometheus.cdn-system.svc:9090
+        url: http://prometheus.cdn-system.svc:9990
         access: proxy
         jsonData:
           httpMethod: POST
@@ -60,7 +60,7 @@ data:
       - name: Loki
         type: loki
         access: proxy
-        url: http://loki.cdn-system.svc:3101
+        url: http://loki.cdn-system.svc:3131
         jsonData:
           maxLines: 1000
 ---
@@ -470,5 +470,5 @@ spec:
     app: grafana
   ports:
     - name: http-grafana
-      port: 3100
+      port: 3130
       targetPort: http-grafana

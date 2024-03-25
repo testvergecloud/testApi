@@ -21,7 +21,7 @@ data:
         scrape_interval: 5s
         scrape_timeout: 2s
         static_configs:
-          - targets: [ "cdn-api.cdn-system.svc:3002" ]
+          - targets: [ "cdn-api.cdn-system.svc:3332" ]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -53,7 +53,7 @@ spec:
           ports:
             - name: prometheus
               containerPort: 9090
-              hostPort: 9090
+              hostPort: 9990
           resources:
             requests:
               cpu: 100m
@@ -78,5 +78,5 @@ spec:
     app: prometheus
   ports:
     - name: prometheus
-      port: 9090
+      port: 9990
       targetPort: prometheus

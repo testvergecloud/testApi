@@ -9,14 +9,14 @@ spec:
 
   ports:
   - name: cdn-api
-    port: 3000
+    port: 3330
     targetPort: cdn-api
   - name: cdn-api-debug
-    port: 4000
+    port: 4440
     targetPort: cdn-api-debug
   - name: metrics
-    port: 3001
+    port: 3331
     targetPort: metrics
   - name: prometheus
-    port: 3002
+    port: 3332
     targetPort: prometheus

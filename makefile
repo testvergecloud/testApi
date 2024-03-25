@@ -337,10 +337,10 @@ pgcli:
 	pgcli postgresql://postgres:postgres@localhost
 
 liveness:
-	curl -il http://localhost:3000/v1/liveness
+	curl -il http://localhost:3330/v1/liveness
 
 readiness:
-	curl -il http://localhost:3000/v1/readiness
+	curl -il http://localhost:3330/v1/readiness
 
 token-gen:
 	export CDN_DB_HOST_PORT=localhost; go run app/tooling/cdn-admin/main.go gentoken 5cf37266-3473-4006-984f-9325122678b7 54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
@@ -352,16 +352,16 @@ docs:
 # Metrics and Tracing
 
 metrics-view-sc:
-	expvarmon -ports="localhost:4000" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
+	expvarmon -ports="localhost:4440" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
 
 metrics-view:
-	expvarmon -ports="localhost:3001" -endpoint="/metrics" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
+	expvarmon -ports="localhost:3331" -endpoint="/metrics" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
 
 grafana:
-	open -a "Google Chrome" http://localhost:3100/
+	open -a "Google Chrome" http://localhost:3130/
 
 statsviz:
-	open -a "Google Chrome" http://localhost:4000/debug/statsviz
+	open -a "Google Chrome" http://localhost:4440/debug/statsviz
 
 # ==============================================================================
 # Running tests within the local computer
@@ -388,22 +388,22 @@ test-race: test-race lint vuln-check
 
 token:
 	curl -il \
-	--user "admin@example.com:gophers" http://localhost:3000/v1/users/token/54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
+	--user "admin@example.com:gophers" http://localhost:3330/v1/users/token/54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
 
 # export TOKEN="COPY TOKEN STRING FROM LAST CALL"
 
 users:
 	curl -il \
-	-H "Authorization: Bearer ${TOKEN}" "http://localhost:3000/v1/users?page=1&rows=2"
+	-H "Authorization: Bearer ${TOKEN}" "http://localhost:3330/v1/users?page=1&rows=2"
 
 load:
 	hey -m GET -c 100 -n 1000 \
-	-H "Authorization: Bearer ${TOKEN}" "http://localhost:3000/v1/users?page=1&rows=2"
+	-H "Authorization: Bearer ${TOKEN}" "http://localhost:3330/v1/users?page=1&rows=2"
 
 otel-test:
 	curl -il \
 	-H "Traceparent: 00-918dd5ecf264712262b68cf2ef8b5239-896d90f23f69f006-01" \
-	--user "admin@example.com:gophers" http://localhost:3000/v1/users/token/54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
+	--user "admin@example.com:gophers" http://localhost:3330/v1/users/token/54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
 
 # ==============================================================================
 # Modules support
@@ -441,29 +441,29 @@ run-help:
 	go run app/services/cdn-api/main.go --help | go run app/tooling/logfmt/main.go
 
 curl:
-	curl -il http://localhost:3000/v1/hack
+	curl -il http://localhost:3330/v1/hack
 
 curl-auth:
-	curl -il -H "Authorization: Bearer ${TOKEN}" http://localhost:3000/v1/hackauth
+	curl -il -H "Authorization: Bearer ${TOKEN}" http://localhost:3330/v1/hackauth
 
 load-hack:
-	hey -m GET -c 100 -n 100000 "http://localhost:3000/v1/hack"
+	hey -m GET -c 100 -n 100000 "http://localhost:3330/v1/hack"
 
 admin:
 	go run app/tooling/cdn-admin/main.go
 
 ready:
-	curl -il http://localhost:3000/v1/readiness
+	curl -il http://localhost:3330/v1/readiness
 
 live:
-	curl -il http://localhost:3000/v1/liveness
+	curl -il http://localhost:3330/v1/liveness
 
 curl-create:
 	curl -il -X POST \
 	-H "Authorization: Bearer ${TOKEN}" \
 	-H 'Content-Type: application/json' \
 	-d '{"name":"bill","email":"b@gmail.com","roles":["ADMIN"],"department":"IT","password":"123","passwordConfirm":"123"}' \
-	http://localhost:3000/v1/users
+	http://localhost:3330/v1/users
 
 # ==============================================================================
 # Talk commands
@@ -488,7 +488,7 @@ talk-apply:
 talk-build: all dev-load talk-apply
 
 talk-load:
-	hey -m GET -c 10 -n 1000 -H "Authorization: Bearer ${TOKEN}" "http://localhost:3000/v1/users?page=1&rows=2"
+	hey -m GET -c 10 -n 1000 -H "Authorization: Bearer ${TOKEN}" "http://localhost:3330/v1/users?page=1&rows=2"
 
 talk-logs:
 	kubectl logs --namespace=$(NAMESPACE) -l app=$(APP) --all-containers=true -f --tail=100 --max-log-requests=6
@@ -503,7 +503,7 @@ talk-describe:
 	kubectl describe pod --namespace=$(NAMESPACE) -l app=$(APP)
 
 talk-metrics:
-	expvarmon -ports="localhost:4000" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
+	expvarmon -ports="localhost:4440" -vars="build,requests,goroutines,errors,panics,mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
 
 # ==============================================================================
 # Admin Frontend
@@ -511,7 +511,7 @@ talk-metrics:
 ADMIN_FRONTEND_PREFIX := ./app/frontends/admin
 
 write-token-to-env:
-	echo "VITE_SERVICE_API=http://localhost:3000/v1" > ${ADMIN_FRONTEND_PREFIX}/.env
+	echo "VITE_SERVICE_API=http://localhost:3330/v1" > ${ADMIN_FRONTEND_PREFIX}/.env
 	make token | grep -o '"ey.*"' | awk '{print "VITE_SERVICE_TOKEN="$$1}' >> ${ADMIN_FRONTEND_PREFIX}/.env
 
 admin-gui-install:

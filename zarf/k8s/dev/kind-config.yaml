@@ -4,26 +4,26 @@ nodes:
 - role: control-plane
   extraPortMappings:
   # cdn-api
-  - containerPort: 3000
-    hostPort: 3000
+  - containerPort: 3330
+    hostPort: 3330
   # cdn-api debug
-  - containerPort: 4000
-    hostPort: 4000
+  - containerPort: 4440
+    hostPort: 4440
   # Metrics
-  - containerPort: 3001
-    hostPort: 3001
+  - containerPort: 3331
+    hostPort: 3331
   # Metrics debug
-  - containerPort: 4001
-    hostPort: 4001
+  - containerPort: 4441
+    hostPort: 4441
   # Grafana
   - containerPort: 3100
-    hostPort: 3100
+    hostPort: 3130
   # Postgres
   - containerPort: 5432
-    hostPort: 5432
+    hostPort: 5532
   # Prometheus
   - containerPort: 9090
-    hostPort: 9090
+    hostPort: 9990
   # Tempo (tracing)
   - containerPort: 9411
-    hostPort: 9411
+    hostPort: 9911

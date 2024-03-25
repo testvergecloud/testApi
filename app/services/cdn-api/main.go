@@ -118,9 +118,9 @@ func run(cfg *config.Config, log *logger.Logger, ctx context.Context, db *sqlx.D
 	shutdown := make(chan os.Signal, 1)
 
 	cfgMux := mux.Config{
-		// Build:    build,
+		Build:    build,
 		Shutdown: shutdown,
-		// Log:      log,
+		Log:      log,
 		Delegate: delegate.New(log),
 		Auth:     a,
 		DB:       db,

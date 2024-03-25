@@ -23,7 +23,7 @@ data:
     auth_enabled: false
 
     server:
-      http_listen_port: 3101
+      http_listen_port: 3131
 
     distributor:
       ring:
@@ -96,8 +96,8 @@ spec:
           name: loki
           ports:
             - name: "loki"
-              containerPort: 3101
-              hostPort: 3101
+              containerPort: 3131
+              hostPort: 3131
           args:
             - -config.file=/loki-conf/loki.yaml
             - -config.expand-env
@@ -122,7 +122,7 @@ metadata:
 spec:
   ports:
     - name: "loki"
-      port: 3101
+      port: 3131
       targetPort: "loki"
   selector:
     app: loki

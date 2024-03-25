@@ -32,7 +32,7 @@ func LoadPrometheusConfig(path string, name string, typeC string) (*Prometheus, 
 }
 
 func (p *Prometheus) setDefault() {
-	p.Host = "0.0.0.0:3002"
+	p.Host = "0.0.0.0:3332"
 	p.Route = "/metrics"
 	p.ReadTimeout = time.Second * 5
 	p.WriteTimeout = time.Second * 10

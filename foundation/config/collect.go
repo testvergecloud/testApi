@@ -25,5 +25,5 @@ func LoadCollectConfig(path string, name string, typeC string) (*Collect, error)
 }
 
 func (c *Collect) setDefault() {
-	c.From = "http://localhost:4000/debug/vars"
+	c.From = "http://localhost:4440/debug/vars"
 }

@@ -22,7 +22,7 @@ make build TAG=myTAG #to build the image
 make run-prod #to build and run the application
 ```
 
-This command will build the optimized Docker image for production and start the container. The application will be accessible on the **3000** port.
+This command will build the optimized Docker image for production and start the container. The application will be accessible on the **3330** port.
 
 
 
