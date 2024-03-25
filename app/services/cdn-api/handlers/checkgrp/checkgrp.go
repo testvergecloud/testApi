@@ -35,7 +35,6 @@ func (h *handlers) Readiness(c *gin.Context) error {
 		status = "db not ready"
 		statusCode = http.StatusInternalServerError
 		h.log.Info(ctx, "readiness failure", "status", status)
-		return c.AbortWithError(statusCode, err)
 	}
 
 	data := struct {
@@ -57,7 +56,7 @@ func (h *handlers) Liveness(c *gin.Context) error {
 
 	data := gin.H{
 		"status":     "up",
-		"build":      "", // You can set this if needed.
+		"build":      h.build, // You can set this if needed.
 		"host":       host,
 		"name":       os.Getenv("KUBERNETES_NAME"),
 		"podIP":      os.Getenv("KUBERNETES_POD_IP"),

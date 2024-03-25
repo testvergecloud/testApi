@@ -37,7 +37,7 @@ func (w *Web) setDefault() {
 	w.WriteTimeout = time.Second * 10
 	w.IdleTimeout = time.Second * 120
 	w.ShutdownTimeout = time.Second * 20
-	w.APIHost = "0.0.0.0:3000"
-	w.DebugHost = "0.0.0.0:4000"
+	w.APIHost = "0.0.0.0:3330"
+	w.DebugHost = "0.0.0.0:4440"
 	w.CORSAllowedOrigins = []string{"*"}
 }

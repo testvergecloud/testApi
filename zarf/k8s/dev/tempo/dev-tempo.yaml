@@ -70,7 +70,7 @@ data:
 #      storage:
 #        path: /tmp/tempo/generator/wal
 #        remote_write:
-#          - url: http://prometheus:9090/api/v1/write
+#          - url: http://prometheus:9990/api/v1/write
 #            send_exemplars: true
 
 ---
@@ -106,7 +106,7 @@ spec:
             - containerPort: 4318
               hostPort: 4318
             - containerPort: 9411
-              hostPort: 9411
+              hostPort: 9911
           args:
             - -config.file=/tempo-conf/tempo.yaml
           volumeMounts:
@@ -140,5 +140,5 @@ spec:
       name: "4317"
     - port: 4318
       name: "4318"
-    - port: 9411
-      name: "9411"
+    - port: 9911
+      name: "9911"
