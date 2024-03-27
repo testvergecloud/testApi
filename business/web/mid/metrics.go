@@ -1,36 +1,25 @@
 package mid
 
 import (
-	"context"
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/testvergecloud/testApi/business/web/metrics"
-	"github.com/testvergecloud/testApi/foundation/web"
 )
 
 // Metrics updates program counters.
-func Metrics() web.MidHandler {
-	m := func(handler web.Handler) web.Handler {
-		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			ctx = metrics.Set(ctx)
+func Metrics() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Request = c.Request.WithContext(metrics.Set(c.Request.Context()))
+		c.Next()
 
-			err := handler(ctx, w, r)
+		ctx := c.Request.Context()
+		n := metrics.AddRequests(ctx)
 
-			n := metrics.AddRequests(ctx)
-
-			if n%1000 == 0 {
-				metrics.AddGoroutines(ctx)
-			}
-
-			if err != nil {
-				metrics.AddErrors(ctx)
-			}
-
-			return err
+		if n%1000 == 0 {
+			metrics.AddGoroutines(ctx)
 		}
 
-		return h
+		if len(c.Errors) > 0 {
+			metrics.AddErrors(ctx)
+		}
 	}
-
-	return m
 }

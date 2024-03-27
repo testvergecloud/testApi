@@ -22,16 +22,17 @@ RUN go build -ldflags "-X main.build=${BUILD_REF}"
 WORKDIR /service/app/services/cdn-api
 RUN go build -ldflags "-X main.build=${BUILD_REF}"
 
-
 # Run the Go Binary in Alpine.
 FROM alpine:3.19
 ARG BUILD_DATE
 ARG BUILD_REF
 RUN addgroup -g 1000 -S cdn && \
     adduser -u 1000 -h /service -G cdn -S cdn
+COPY --from=build_cdn-api --chown=cdn:cdn /service/foundation/env/cdn/. /service/foundation/env/cdn/.
 COPY --from=build_cdn-api --chown=cdn:cdn /service/zarf/keys/. /service/zarf/keys/.
 COPY --from=build_cdn-api --chown=cdn:cdn /service/app/tooling/cdn-admin/cdn-admin /service/cdn-admin
 COPY --from=build_cdn-api --chown=cdn:cdn /service/app/services/cdn-api/cdn-api /service/cdn-api
+
 WORKDIR /service
 USER cdn
 CMD ["./cdn-api"]

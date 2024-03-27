@@ -69,3 +69,30 @@ func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) h
 
 	return app
 }
+
+// // WebAPI constructs a http.Handler with all application routes bound.
+// func TestWebAPI(log *logger.Logger, tracer trace.Tracer) *web.App {
+// 	app := web.NewApp(
+// 		tracer,
+// 		mid.Logger(log),
+// 		mid.Errors(log),
+// 		mid.Metrics(),
+// 		mid.Panics(),
+// 	)
+
+// 	return app
+// }
+
+// func TestWebAPI2(app *web.App, build string, log *logger.Logger, db *sqlx.DB, delegate *delegate.Delegate, a *auth.Auth, routeAdder RouteAdderTest, options ...func(opts *Options)) http.Handler {
+// 	var opts Options
+// 	for _, option := range options {
+// 		option(&opts)
+// 	}
+
+// 	if len(opts.corsOrigin) > 0 {
+// 		app.EnableCORS(mid.Cors(opts.corsOrigin))
+// 	}
+
+// 	routeAdder.AddTest(app, build, log, db, delegate, a)
+// 	return app
+// }

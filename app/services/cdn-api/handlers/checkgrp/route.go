@@ -22,8 +22,7 @@ func Routes(app *web.App, cfg Config) {
 
 	v1 := app.Mux.Group(version)
 	{
-		// hdl := new(cfg.Build, cfg.Log, cfg.DB)
-		hdl := new("", cfg.Log, cfg.DB)
+		hdl := new(cfg.Build, cfg.Log, cfg.DB)
 		app.HandleNoMiddleware(http.MethodGet, v1, "/readiness", hdl.Readiness)
 		app.HandleNoMiddleware(http.MethodGet, v1, "/liveness", hdl.Liveness)
 	}

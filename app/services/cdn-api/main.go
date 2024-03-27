@@ -47,6 +47,7 @@ var (
 func main() {
 	// Define the module with options
 	app := fx.New(
+		fx.Provide(initializeMux),
 		fx.Provide(initializeContext),
 		fx.Provide(loadConfig),
 		fx.Provide(initializeLogger),
@@ -55,7 +56,6 @@ func main() {
 		fx.Provide(sqldb.Open),
 		fx.Provide(auth.New),
 		fx.Invoke(run), // Run the application logic
-		// fx.Logger(log.New(os.Stdout, "", 0)), // Use a logger provided by Uber FX
 	)
 
 	// Start the application
@@ -70,34 +70,31 @@ func main() {
 	os.Exit(0)
 }
 
-func run(cfg *config.Config, log *logger.Logger, ctx context.Context, db *sqlx.DB, tp *trace.TracerProvider, a *auth.Auth) {
+// Build    string
+// Shutdown chan os.Signal
+// Log      *logger.Logger
+// Delegate *delegate.Delegate
+// Auth     *auth.Auth
+// DB       *sqlx.DB
+// Tracer   trace.Tracer
+
+func run(cfg *config.Config, log *logger.Logger, ctx context.Context, tp *trace.TracerProvider, db *sqlx.DB, server *http.Server, shutdown chan os.Signal) {
 	// -------------------------------------------------------------------------
 	// GOMAXPROCS
 	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
 	// -------------------------------------------------------------------------
 	// App Starting
-
 	log.Info(ctx, "starting service", "version", build)
 	defer log.Info(ctx, "shutdown complete")
 
 	expvar.NewString("build").Set(build)
-
-	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.HostPort)
-
 	defer func() {
 		log.Info(ctx, "shutdown", "status", "stopping database support", "hostport", cfg.HostPort)
 		db.Close()
 	}()
 
-	// -------------------------------------------------------------------------
-	// Start Tracing Support
-
-	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
-
 	defer tp.Shutdown(context.Background())
-
-	tracer := tp.Tracer("service")
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service
@@ -115,37 +112,16 @@ func run(cfg *config.Config, log *logger.Logger, ctx context.Context, db *sqlx.D
 
 	log.Info(ctx, "startup", "status", "initializing V1 API support")
 
-	shutdown := make(chan os.Signal, 1)
-
-	cfgMux := mux.Config{
-		Build:    build,
-		Shutdown: shutdown,
-		Log:      log,
-		Delegate: delegate.New(log),
-		Auth:     a,
-		DB:       db,
-		Tracer:   tracer,
-	}
-
-	api := http.Server{
-		Addr:         cfg.APIHost,
-		Handler:      mux.WebAPI(cfgMux, buildRoutes(), mux.WithCORS(cfg.CORSAllowedOrigins)),
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
-		IdleTimeout:  cfg.Web.IdleTimeout,
-		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
-	}
-
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Info(ctx, "startup", "status", "api router started", "host", api.Addr)
+		log.Info(ctx, "startup", "status", "api router started", "host", server.Addr)
 
-		serverErrors <- api.ListenAndServe()
+		serverErrors <- server.ListenAndServe()
 	}()
 
 	// Handle graceful shutdown
-	handleShutdown(&api, log, ctx, cfg.Web.ShutdownTimeout, shutdown, serverErrors)
+	handleShutdown(server, log, ctx, cfg.Web.ShutdownTimeout, shutdown, serverErrors)
 }
 
 // Handle graceful shutdown
@@ -200,10 +176,7 @@ func startTracing(cfg *config.Config, log *logger.Logger, ctx context.Context) (
 	// compatible with your project. Please review the documentation for
 	// opentelemetry.
 
-	// -------------------------------------------------------------------------
-	// Initialize authentication support
-
-	log.Info(ctx, "startup", "status", "initializing authentication support")
+	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
 
 	exporter, err := otlptrace.New(
 		context.Background(),
@@ -283,4 +256,28 @@ func loadKeyStore(cfg *config.Config) (auth.KeyLookup, error) {
 
 func initializeContext() context.Context {
 	return context.Background()
+}
+
+func initializeMux(cfg *config.Config, log *logger.Logger, db *sqlx.DB, tp *trace.TracerProvider, a *auth.Auth) (*http.Server, chan os.Signal) {
+	shutdown := make(chan os.Signal, 1)
+	cfgMux := mux.Config{
+		Build:    build,
+		Shutdown: shutdown,
+		Log:      log,
+		Delegate: delegate.New(log),
+		Auth:     a,
+		DB:       db,
+		Tracer:   tp.Tracer("service"),
+	}
+
+	api := http.Server{
+		Addr:         cfg.APIHost,
+		Handler:      mux.WebAPI(cfgMux, buildRoutes(), mux.WithCORS(cfg.CORSAllowedOrigins)),
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
+	}
+
+	return &api, shutdown
 }

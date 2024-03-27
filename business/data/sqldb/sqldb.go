@@ -47,7 +47,7 @@ var (
 // }
 
 // Open knows how to open a database connection based on the configuration.
-func Open(cfg *config.Config) (*sqlx.DB, error) {
+func Open(cfg *config.DB) (*sqlx.DB, error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
 		sslMode = "disable"
@@ -88,14 +88,16 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 		defer cancel()
 	}
 
+	// ctx, _ = context.WithTimeout(ctx, time.Second)
 	var pingError error
 	for attempts := 1; ; attempts++ {
-		pingError = db.Ping()
+		pingError = db.PingContext(ctx)
 		if pingError == nil {
 			break
 		}
 		time.Sleep(time.Duration(attempts) * 100 * time.Millisecond)
 		if ctx.Err() != nil {
+			fmt.Println(ctx.Err())
 			return ctx.Err()
 		}
 	}

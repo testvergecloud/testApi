@@ -19,9 +19,9 @@ type Add struct{}
 // Add implements the RouterAdder interface.
 func (Add) Add(app *web.App, cfg mux.Config) {
 	checkgrp.Routes(app, checkgrp.Config{
-		// Build: cfg.Build,
-		Log: cfg.Log,
-		DB:  cfg.DB,
+		Build: cfg.Build,
+		Log:   cfg.Log,
+		DB:    cfg.DB,
 	})
 
 	vproductgrp.Routes(app, vproductgrp.Config{
