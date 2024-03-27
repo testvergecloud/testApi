@@ -17,7 +17,7 @@ import (
 
 // Users retrieves all users from the database.
 func Users(log *logger.Logger, cfg *config.Config, pageNumber string, rowsPerPage string) error {
-	db, err := sqldb.Open(cfg)
+	db, err := sqldb.Open(cfg.DB)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

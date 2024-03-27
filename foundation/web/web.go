@@ -2,7 +2,6 @@
 package web
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -21,24 +20,23 @@ import (
 // A Handler is a type that handles a http request within our own little mini
 // framework.
 type (
-	Handler    func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
+	// Handler    func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 	GinHandler func(c *gin.Context) error
 )
 
 // App is the entrypoint into our application and what configures our context
 // object for each of our http handlers. Feel free to add any configuration
 // data/logic on this App struct.
+
 type App struct {
-	// Mux      *http.ServeMux
 	Mux      *gin.Engine
 	otmux    http.Handler
 	shutdown chan os.Signal
-	mw       []MidHandler
 	tracer   trace.Tracer
 }
 
 // NewApp creates an App value that handle a set of routes for the application.
-func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...MidHandler) *App {
+func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...gin.HandlerFunc) *App {
 	// Create an OpenTelemetry HTTP Handler which wraps our router. This will start
 	// the initial span and annotate it with information about the request/trusted.
 	//
@@ -47,12 +45,14 @@ func NewApp(shutdown chan os.Signal, tracer trace.Tracer, mw ...MidHandler) *App
 	// https://w3c.github.io/trace-context/
 
 	mux := gin.New()
+	for _, v := range mw {
+		mux.Use(v)
+	}
 
 	return &App{
 		Mux:      mux,
 		otmux:    otelhttp.NewHandler(mux, "request"),
 		shutdown: shutdown,
-		mw:       mw,
 		tracer:   tracer,
 	}
 }
@@ -69,6 +69,7 @@ func (a *App) SignalShutdown() {
 // application traffic. This was set up on line 44 in the NewApp function.
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.otmux.ServeHTTP(w, r)
+	// otelhttp.NewHandler(a.Mux, "request")
 }
 
 // EnableCORS enables CORS preflight requests to work in the middleware. It

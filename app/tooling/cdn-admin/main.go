@@ -36,9 +36,10 @@ func main() {
 // the command line.
 func run(cfg *config.Config, log *logger.Logger) {
 	ctx := context.Background()
-	switch os.Args[0] {
+
+	switch os.Args[1] {
 	case "domain":
-		if err := commands.Domain(os.Args[1]); err != nil {
+		if err := commands.Domain(os.Args[2]); err != nil {
 			log.Error(ctx, "adding domain: ", err)
 			return
 		}
@@ -66,17 +67,17 @@ func run(cfg *config.Config, log *logger.Logger) {
 		}
 
 	case "useradd":
-		name := os.Args[1]
-		email := os.Args[2]
-		password := os.Args[3]
+		name := os.Args[2]
+		email := os.Args[3]
+		password := os.Args[4]
 		if err := commands.UserAdd(log, cfg, name, email, password); err != nil {
 			log.Error(ctx, "adding user: ", err)
 			return
 		}
 
 	case "users":
-		pageNumber := os.Args[1]
-		rowsPerPage := os.Args[2]
+		pageNumber := os.Args[2]
+		rowsPerPage := os.Args[3]
 		if err := commands.Users(log, cfg, pageNumber, rowsPerPage); err != nil {
 			log.Error(ctx, "getting users: ", err)
 			return
@@ -89,12 +90,12 @@ func run(cfg *config.Config, log *logger.Logger) {
 		}
 
 	case "gentoken":
-		userID, err := uuid.Parse(os.Args[1])
+		userID, err := uuid.Parse(os.Args[2])
 		if err != nil {
 			log.Error(ctx, "generating token: ", err)
 			return
 		}
-		kid := os.Args[2]
+		kid := os.Args[3]
 		if kid == "" {
 			kid = cfg.DefaultKID
 		}

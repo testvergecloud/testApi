@@ -20,7 +20,7 @@ func UserAdd(log *logger.Logger, cfg *config.Config, name, email, password strin
 		return ErrHelp
 	}
 
-	db, err := sqldb.Open(cfg)
+	db, err := sqldb.Open(cfg.DB)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

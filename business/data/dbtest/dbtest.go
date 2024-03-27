@@ -75,13 +75,13 @@ func NewTest(t *testing.T, c *docker.Container, testName string) *Test {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbM, err := sqldb.Open(&config.Config{DB: &config.DB{
+	dbM, err := sqldb.Open(&config.DB{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
 		Name:       "postgres",
 		DisableTLS: true,
-	}})
+	})
 	if err != nil {
 		t.Fatalf("Opening database connection: %v", err)
 	}
@@ -104,13 +104,13 @@ func NewTest(t *testing.T, c *docker.Container, testName string) *Test {
 
 	// -------------------------------------------------------------------------
 
-	db, err := sqldb.Open(&config.Config{DB: &config.DB{
+	db, err := sqldb.Open(&config.DB{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
 		Name:       dbName,
 		DisableTLS: true,
-	}})
+	})
 	if err != nil {
 		t.Fatalf("Opening database connection: %v", err)
 	}

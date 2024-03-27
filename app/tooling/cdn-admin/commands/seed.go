@@ -12,7 +12,7 @@ import (
 
 // Seed loads test data into the database.
 func Seed(cfg *config.Config) error {
-	db, err := sqldb.Open(cfg)
+	db, err := sqldb.Open(cfg.DB)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}
