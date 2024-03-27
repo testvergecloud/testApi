@@ -3,7 +3,6 @@ module github.com/testvergecloud/testApi
 go 1.22
 
 require (
-	github.com/ardanlabs/conf/v3 v3.1.7
 	github.com/ardanlabs/darwin/v3 v3.3.1
 	github.com/arl/statsviz v0.6.0
 	github.com/gin-contrib/cors v1.7.0

@@ -16,20 +16,20 @@ import (
 )
 
 func main() {
-	// log := logger.New(io.Discard, logger.LevelInfo, "ADMIN", func(context.Context) string { return "00000000-0000-0000-0000-000000000000" })
-
-	// if err := run(log); err != nil {
-	// 	if !errors.Is(err, commands.ErrHelp) {
-	// 		fmt.Println("msg", err)
-	// 	}
-	// 	os.Exit(1)
-	// }
-	ServerModule := fx.Options(
+	// -------------------------------------------------------------------------
+	app := fx.New(fx.Options(
 		fx.Provide(loadConfig),
 		fx.Provide(initializeLogger),
 		fx.Invoke(run),
-	)
-	fx.New(ServerModule).Run()
+	))
+
+	// Start the application
+	if err := app.Start(context.Background()); err != nil {
+		fmt.Printf("Error starting cdn-admin: %v", err)
+	}
+
+	// Application has stopped, exit with success status code
+	os.Exit(0)
 }
 
 // run handles the execution of the commands specified on
@@ -41,28 +41,33 @@ func run(cfg *config.Config, log *logger.Logger) {
 	case "domain":
 		if err := commands.Domain(os.Args[2]); err != nil {
 			log.Error(ctx, "adding domain: ", err)
+			fmt.Println(ctx, "adding domain: ", err)
 			return
 		}
 
 	case "migrate":
 		if err := commands.Migrate(cfg); err != nil {
 			log.Error(ctx, "migrating database: ", err)
+			fmt.Println(ctx, "migrating database: ", err)
 			return
 		}
 
 	case "seed":
 		if err := commands.Seed(cfg); err != nil {
 			log.Error(ctx, "seeding database: ", err)
+			fmt.Println(ctx, "seeding database: ", err)
 			return
 		}
 
 	case "migrate-seed":
 		if err := commands.Migrate(cfg); err != nil {
 			log.Error(ctx, "migrating database: ", err)
+			fmt.Println(ctx, "migrating database: ", err)
 			return
 		}
 		if err := commands.Seed(cfg); err != nil {
 			log.Error(ctx, "seeding database: ", err)
+			fmt.Println(ctx, "seeding database: ", err)
 			return
 		}
 
@@ -72,6 +77,7 @@ func run(cfg *config.Config, log *logger.Logger) {
 		password := os.Args[4]
 		if err := commands.UserAdd(log, cfg, name, email, password); err != nil {
 			log.Error(ctx, "adding user: ", err)
+			fmt.Println(ctx, "adding user: ", err)
 			return
 		}
 
@@ -80,12 +86,14 @@ func run(cfg *config.Config, log *logger.Logger) {
 		rowsPerPage := os.Args[3]
 		if err := commands.Users(log, cfg, pageNumber, rowsPerPage); err != nil {
 			log.Error(ctx, "getting users: ", err)
+			fmt.Println(ctx, "getting users: ", err)
 			return
 		}
 
 	case "genkey":
 		if err := commands.GenKey(); err != nil {
 			log.Error(ctx, "key generation: ", err)
+			fmt.Println(ctx, "key generation: ", err)
 			return
 		}
 
@@ -93,6 +101,7 @@ func run(cfg *config.Config, log *logger.Logger) {
 		userID, err := uuid.Parse(os.Args[2])
 		if err != nil {
 			log.Error(ctx, "generating token: ", err)
+			fmt.Println(ctx, "generating token: ", err)
 			return
 		}
 		kid := os.Args[3]
@@ -101,6 +110,7 @@ func run(cfg *config.Config, log *logger.Logger) {
 		}
 		if err := commands.GenToken(log, cfg, cfg.KeysFolder, userID, kid); err != nil {
 			log.Error(ctx, "generating token: ", err)
+			fmt.Println(ctx, "generating token: ", err)
 			return
 		}
 

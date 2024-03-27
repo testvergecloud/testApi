@@ -63,9 +63,6 @@ func main() {
 		fmt.Printf("Error starting application: %v", err)
 	}
 
-	// Wait for the application to stop
-	<-app.Done()
-
 	// Application has stopped, exit with success status code
 	os.Exit(0)
 }
