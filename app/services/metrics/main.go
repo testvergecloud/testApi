@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"expvar"
+	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -17,24 +18,25 @@ import (
 	"github.com/testvergecloud/testApi/foundation/config"
 	"github.com/testvergecloud/testApi/foundation/logger"
 	"go.uber.org/fx"
-
-	"github.com/ardanlabs/conf/v3"
 )
 
 var build = "develop"
 
 func main() {
 	// -------------------------------------------------------------------------
-	ServerModule := fx.Options(
+	app := fx.New(fx.Options(
 		fx.Provide(loadConfig),
 		fx.Provide(initializeLogger),
 		fx.Invoke(run),
-	)
-	fx.New(ServerModule).Run()
-	// if err := run(ctx, log); err != nil {
-	// 	log.Error(ctx, "startup", "msg", err)
-	// 	os.Exit(1)
-	// }
+	))
+
+	// Start the application
+	if err := app.Start(context.Background()); err != nil {
+		fmt.Printf("Error starting Metrics: %v", err)
+	}
+
+	// Application has stopped, exit with success status code
+	os.Exit(0)
 }
 
 func run(cfg *config.Config, log *logger.Logger) {
@@ -48,13 +50,6 @@ func run(cfg *config.Config, log *logger.Logger) {
 
 	log.Info(ctx, "starting service", "version", build)
 	defer log.Info(ctx, "shutdown complete")
-
-	out, err := conf.String(&cfg)
-	if err != nil {
-		log.Error(ctx, "generating config for output: ", err)
-		return
-	}
-	log.Info(ctx, "startup", "config", out)
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service

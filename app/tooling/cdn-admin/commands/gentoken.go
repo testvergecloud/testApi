@@ -25,7 +25,7 @@ func GenToken(log *logger.Logger, cfg *config.Config, keyPath string, userID uui
 		return ErrHelp
 	}
 
-	db, err := sqldb.Open(cfg.DB)
+	db, err := sqldb.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}
